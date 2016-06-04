@@ -8,9 +8,12 @@ scalaVersion := "2.11.7"
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 
+libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
+
 libraryDependencies += "org.tlv" %% "tlvlib" % "1.1-SNAPSHOT"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.1.7" % "test"
 
+libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.12.0"
 
 fork in run := true
