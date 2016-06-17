@@ -5,6 +5,7 @@ package org.iso7816
   */
 case class Select(aid: AID) extends APDU(0, 0, 0, 0, List()) {
 
+
 }
 
 object select {

@@ -6,7 +6,7 @@ import org.scalatest.{Matchers, FlatSpec}
 /**
   * Created by lau on 6/4/16.
   */
-class AFLTestextends extends FlatSpec with Matchers {
+class AFLTest extends FlatSpec with Matchers {
 
   "AFL" should " be able to parse" in {
     val input = s"94080801010010010100"

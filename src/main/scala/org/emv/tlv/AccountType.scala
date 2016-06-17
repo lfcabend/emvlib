@@ -1,40 +1,48 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.{LeafToStringHelper, SingleTagParser}
+import org.emv.tlv.EMVTLV._
+import org.iso7816.AIDCategory._
 import org.tlv.HexUtils
 import org.tlv.TLV.{BerTLV, BerTag, BerTLVLeafT}
 
 import org.tlv.HexUtils.hex2Bytes
 
-/**
-  * Created by lau on 5/29/16.
-  */
-case class AccountType(override val value: Seq[Byte])
-  extends BerTLVLeafT with LeafToStringHelper {
+trait AccountTypeT extends EMVTLVLeaf {
 
-  require(value.length == AccountType.length)
+  override val tag: BerTag = AccountType.tag
 
-  override def tag(): BerTag = AccountType.tag
+  def isUnspecified: Boolean = accountType == AccountTypeEnum.UNSPECIFIED
 
-  def isUnspecified: Boolean = value == hex2Bytes("00").toList
+  def isChequeDebit: Boolean = accountType == AccountTypeEnum.CHEQUE_DEBIT
 
-  def isChequeDebit: Boolean = value == hex2Bytes("20").toList
+  def isSavings: Boolean = accountType == AccountTypeEnum.SAVINGS
 
-  def isSavings: Boolean = value == hex2Bytes("10").toList
+  def isCredit: Boolean = accountType == AccountTypeEnum.CREDIT
 
-  def isCredit: Boolean = value == hex2Bytes("30").toList
+  def accountType = value(0) match {
+    case x if (x == 0x00.toByte) => AccountTypeEnum.UNSPECIFIED
+    case x if (x == 0x20.toByte) => AccountTypeEnum.CHEQUE_DEBIT
+    case x if (x == 0x10.toByte) => AccountTypeEnum.SAVINGS
+    case x if (x == 0x30.toByte) => AccountTypeEnum.CREDIT
+    case _ => AccountTypeEnum.RFU
+  }
 
-  override def postFixLabel: Option[String] = this match {
-    case UnSpecifiedAccountType() => Some("Unspecified")
-    case ChequeDebitAccountType() => Some("ChequeDebit")
-    case SavingsAccountType() => Some("Savings")
-    case CreditAccountType() => Some("Credit")
-    case _ => None
+  override val postFixLabel: Option[String] = accountType match {
+    case AccountTypeEnum.RFU => None
+    case _ => Some(accountType.toString)
   }
 
 }
 
-object AccountType {
+case class AccountType(override val value: Seq[Byte]) extends AccountTypeT
+
+object AccountTypeEnum extends Enumeration {
+
+  val UNSPECIFIED, CHEQUE_DEBIT, SAVINGS, CREDIT, RFU = Value
+
+}
+
+trait AccountTypeSpec extends EMVDefaultNumericWithLengthSpec[AccountType] {
 
   val length = 1
 
@@ -45,36 +53,9 @@ object AccountType {
 
   val tag: BerTag = "5F57"
 
-  def unSpecified: AccountType = AccountType(unSpecifiedValue)
+  override val max: Int = 2
 
-  def savings: AccountType = AccountType(savingsValue)
-
-  def chequeDebit: AccountType = AccountType(chequeDebitValue)
-
-  def credit: AccountType = AccountType(creditValue)
-
+  override val min: Int = 2
 }
 
-object UnSpecifiedAccountType {
-
-  def unapply(at: AccountType): Boolean = at.isUnspecified
-
-}
-
-object ChequeDebitAccountType {
-
-  def unapply(at: AccountType): Boolean = at.isChequeDebit
-
-}
-
-object SavingsAccountType {
-
-  def unapply(at: AccountType): Boolean = at.isSavings
-
-}
-
-object CreditAccountType {
-
-  def unapply(at: AccountType): Boolean = at.isCredit
-
-}
+object AccountType extends AccountTypeSpec

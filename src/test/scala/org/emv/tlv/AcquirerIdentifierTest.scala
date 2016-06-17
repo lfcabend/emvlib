@@ -1,6 +1,7 @@
 package org.emv.tlv
 
 import org.scalatest.{Matchers, FlatSpec}
+import org.tlv.HexUtils
 import org.tlv.TLV.BerTag
 
 /**
@@ -9,16 +10,13 @@ import org.tlv.TLV.BerTag
 class AcquirerIdentifierTest extends FlatSpec with Matchers {
 
   "A Acquirer Identifier" should " be able to parse" in {
-    val input = s"9F01020001"
+    val input = HexUtils.hex2Bytes("9F0106000000010000")
 
-//    new AcquirerIdentifierParser() {
-//      parse(input) match {
-//        case Success(ac, _) => println(ac)
-//        case Failure(msg, _) => println("FAILURE: " + msg)
-//        case Error(msg, _) => println("ERROR: " + msg)
-//      }
+//    EMVTLV.parseEMVTLV(input) match {
+//      case EMVTLV.EMVParser.Success(ac, _) => println(ac)
+//      case EMVTLV.EMVParser.Failure(msg, _) => println("FAILURE: " + msg)
+//      case EMVTLV.EMVParser.Error(msg, _) => println("ERROR: " + msg)
 //    }
-
   }
 
 }

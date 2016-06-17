@@ -1,19 +1,15 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.SingleTagParser
+import org.emv.tlv.EMVTLV.{EMVDefaultBinaryWithLengthSpec, EMVBinaryWithLengthSpec, EMVTLVLeaf}
 import org.tlv.TLV.{BerTag, BerTLVLeafT}
 import org.emv.tlv.ByteUtils._
 
 /**
   * Created by lau on 5/31/16.
   */
-case class AdditionalTerminalCapabilities(override val value: Seq[Byte])
-  extends BerTLVLeafT with EMVTLV.LeafToStringHelper {
+trait AdditionalTerminalCapabilitiesT extends EMVTLVLeaf {
 
-  require(value.length == AdditionalTerminalCapabilities.length)
-
-
-  override def tag(): BerTag = AdditionalTerminalCapabilities.tag
+  override val tag: BerTag = AdditionalTerminalCapabilities.tag
 
   override def toString: String = {
     s"""${super.toString}
@@ -274,7 +270,13 @@ case class AdditionalTerminalCapabilities(override val value: Seq[Byte])
 
 }
 
-object AdditionalTerminalCapabilities {
+case class AdditionalTerminalCapabilities(override val value: Seq[Byte]) extends AdditionalTerminalCapabilitiesT {
+
+  require(value.length == AdditionalTerminalCapabilities.length)
+}
+
+
+trait AdditionalTerminalCapabilitiesSpec extends EMVDefaultBinaryWithLengthSpec[AdditionalTerminalCapabilities] {
 
   val tag: BerTag = "9F40"
 
@@ -283,3 +285,5 @@ object AdditionalTerminalCapabilities {
   def apply() = new AdditionalTerminalCapabilities(org.tlv.HexUtils.hex2Bytes("0000000000"))
 
 }
+
+object AdditionalTerminalCapabilities extends AdditionalTerminalCapabilitiesSpec

@@ -1,34 +1,34 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.{LeafToStringHelper, SingleTagParser}
+import org.emv.tlv.EMVTLV.{EMVDefaultNumericWithLengthSpec, EMVNumericWithLengthSpec, EMVTLVLeaf, LeafToStringHelper}
 import org.tlv.TLV.{BerTag, BerTLVLeafT}
 
 /**
   * Created by lau on 6/2/16.
   */
-case class AmountOther(override val value: Seq[Byte])
-  extends BerTLVLeafT with LeafToStringHelper {
 
-  require(value.length == AmountOther.length)
+trait AmountOtherT extends EMVTLVLeaf {
 
-  override def tag(): BerTag = AmountOther.tag
+  override val tag: BerTag = AmountOther.tag
 
 }
 
-object AmountOther {
+case class AmountOther(override val value: Seq[Byte]) extends AmountOtherT {
+
+  require(value.length == AmountOther.length)
+
+}
+
+trait AmountOtherSpec extends EMVDefaultNumericWithLengthSpec[AmountOther] {
 
   val length = 6
 
   val tag: BerTag = "9F03"
 
-  //  trait AmountOtherParser extends SingleTagParser[AmountOther] {
-  //
-  //    def parseAmountOther = parse
-  //
-  //    override def parse: Parser[AmountOther] =
-  //      parseLeafwithTag(tag, length, parseN, AmountOther(_))
-  //
-  //  }
-
+  override val max: Int = 12
+  override val min: Int = 12
 }
+
+object AmountOther extends AmountOtherSpec
+
 

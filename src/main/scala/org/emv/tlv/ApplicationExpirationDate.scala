@@ -1,30 +1,20 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.LeafToStringHelper
+import org.emv.tlv.EMVTLV.{EMVDateSpec, EMVTLVLeafWithDate, LeafToStringHelper}
 import org.joda.time.LocalDate
 import org.tlv.TLV.{BerTag, BerTLVLeafT}
 
 /**
   * Created by lau on 6/4/16.
   */
-case class ApplicationExpirationDate(override val value: Seq[Byte])
-  extends BerTLVLeafT with LeafToStringHelper  with DateHelper {
+case class ApplicationExpirationDate(val date: LocalDate) extends EMVTLVLeafWithDate {
 
-  def this(date: LocalDate) = this(DateHelper.date2Bytes(date))
-
-  override def tag(): BerTag = ApplicationExpirationDate.tag
-
+  override val tag: BerTag = ApplicationExpirationDate.tag
 
 }
 
-object ApplicationExpirationDate {
+object ApplicationExpirationDate extends EMVDateSpec[ApplicationExpirationDate] {
 
-  def tag: BerTag = "5F24"
-
-  def length: Int = 3
-
-  def max: Int = 6
-
-  def min: Int = 6
+  val tag: BerTag = "5F24"
 
 }

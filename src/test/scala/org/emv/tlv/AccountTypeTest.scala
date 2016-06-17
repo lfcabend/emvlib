@@ -1,7 +1,8 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.EMVParsers
+import org.emv.tlv.EMVTLV.{EMVParser, EMVParsers}
 import org.scalatest.{Matchers, FlatSpec}
+import org.tlv.HexUtils
 
 import scala.util.parsing.combinator.Parsers
 
@@ -11,25 +12,11 @@ import scala.util.parsing.combinator.Parsers
 class AccountTypeTest extends FlatSpec with Matchers with Parsers {
 
   "A AccountType" should " be able to parse" in {
-    val input = "5F570100"
-    new EMVParsers {
-      parseEMVTLV(input) match {
-        case Success(ac@UnSpecifiedAccountType(), _) => println(ac)
-        case Success(ac, _) => println(s"another ${ac}")
-        case Failure(msg, _) => println("FAILURE: " + msg)
-        case Error(msg, _) => println("ERROR: " + msg)
-      }
-
+    val input = "5F570120"
+    EMVTLV.parseEMVTLV(input) match {
+      case EMVParser.Success(ac, _) => println(s"another ${ac}")
+      case EMVParser.Failure(msg, _) => println("FAILURE: " + msg)
+      case EMVParser.Error(msg, _) => println("ERROR: " + msg)
     }
-    //    new AccountTypeParser() {
-    //      parse(input) match {
-    //        case Success(ac@UnSpecifiedAccountType(), _) => println(ac)
-    //        case Success(ac, _) => println(s"another ${ac}")
-    //        case Failure(msg, _) => println("FAILURE: " + msg)
-    //        case Error(msg, _) => println("ERROR: " + msg)
-    //      }
-    //    }
-
   }
-
 }

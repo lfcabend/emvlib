@@ -1,21 +1,18 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.{LeafToStringHelper, SingleTagParser}
+import org.emv.tlv.EMVTLV._
+import org.tlv.HexUtils._
 import org.tlv.TLV.{BerTag, BerTLVLeafT}
 
-/**
-  * Created by lau on 5/29/16.
-  */
-case class AcquirerIdentifier(override val value: Seq[Byte])
-  extends BerTLVLeafT with LeafToStringHelper {
+trait AcquirerIdentifierT extends EMVTLVLeaf with NumberTextable {
 
-  require(value.length == AcquirerIdentifier.length)
-
-  override def tag(): BerTag = AccountType.tag
+  override val tag: BerTag = AccountType.tag
 
 }
 
-object AcquirerIdentifier {
+case class AcquirerIdentifier(override val value: Seq[Byte]) extends AcquirerIdentifierT
+
+trait AcquirerIdentifierSpec extends EMVDefaultNumericWithLengthSpec[AcquirerIdentifier] {
 
   val length = 6
 
@@ -26,3 +23,5 @@ object AcquirerIdentifier {
   val max = 11
 
 }
+
+object AcquirerIdentifier extends AcquirerIdentifierSpec

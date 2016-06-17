@@ -1,27 +1,20 @@
 package org.emv.tlv
 
 import java.util.Currency
-import org.emv.tlv.EMVTLV.{LeafToStringHelper, SingleTagParser}
+import org.emv.tlv.EMVTLV._
 import org.tlv.TLV.{BerTag, BerTLVLeafT}
 
 /**
   * Created by lau on 6/2/16.
   */
-case class ApplicationCurrencyCode(override val value: Seq[Byte])
-  extends BerTLVLeafT with LeafToStringHelper with CurrencyHelper {
+case class ApplicationCurrencyCode(val currency: Currency) extends EMVTLVLeafWithCurrency {
 
-  override def tag(): BerTag = ApplicationCryptogram.tag
+  override val tag: BerTag = ApplicationCryptogram.tag
 
 }
 
-object ApplicationCurrencyCode {
+object ApplicationCurrencyCode extends EMVCurrencySpec[ApplicationCurrencyCode] {
 
   val tag: BerTag = "9F42"
-
-  val length: Int = 2
-
-  val max: Int = 3
-
-  val min: Int = 3
 
  }

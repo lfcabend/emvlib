@@ -6,7 +6,7 @@ import scala.util.parsing.combinator.Parsers
 /**
   * Created by lau on 5/25/16.
   */
-class PANTest extends FlatSpec with Matchers with Parsers {
+class ApplicationPrimaryAccountNumberTest extends FlatSpec with Matchers with Parsers {
 
 //  "A PAN " should " be able to parse" in {
 //    println("Test")

@@ -16,4 +16,8 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "2.1.7" % "test"
 
 libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.12.0"
 
+libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
+
+libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.2.4"
+
 fork in run := true

@@ -9,9 +9,15 @@ import org.tlv.HexUtils
   */
 trait DateHelper {
 
-  def value: Seq[Byte]
+  override def toString: String =
+    s"""${super.toString}
+       |\t${DateHelper.formatterPretty.print(date)}
+     """.stripMargin
 
-  val date: LocalDate = DateHelper.formatter.parseLocalDate(HexUtils.toHex(value))
+  val value: Seq[Byte] = DateHelper.date2Bytes(date)
+
+  val date: LocalDate
+
 
 }
 
@@ -19,6 +25,10 @@ object DateHelper {
 
   val formatter = DateTimeFormat.forPattern("yyMMdd")
 
+  val formatterPretty = DateTimeFormat.longDate()
+
   def date2Bytes(date: LocalDate): Seq[Byte] = HexUtils.hex2Bytes(formatter.print(date))
+
+  def bytesToDate(bytes: Seq[Byte]): LocalDate = formatter.parseLocalDate(HexUtils.toHex(bytes))
 
 }
