@@ -1,5 +1,8 @@
 package org.iso7816
 
+import java.nio.charset.Charset
+
+import org.tlv.HexUtils
 
 /**
   * Created by Lau on 4/25/2016.
@@ -19,6 +22,12 @@ case class AID(val value: Seq[Byte]) {
     case x if ((value(0) & 0xE0) == 0xE0) => AIDCategory.STANDARD
     case _ => AIDCategory.PROPRIETARY
   }
+
+}
+
+object AID {
+
+  val PPSE: AID = new AID("".getBytes(Charset.forName("ASCII")))
 
 }
 

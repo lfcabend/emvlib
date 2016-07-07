@@ -20,4 +20,6 @@ libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.2.4"
 
+libraryDependencies += "org.scalaz" %% "scalaz-concurrent" % "7.2.4"
+
 fork in run := true

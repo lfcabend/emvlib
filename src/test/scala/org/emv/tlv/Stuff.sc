@@ -1,8 +1,14 @@
-import org.emv.tlv.{ApplicationPriorityIndicator, ApplicationPreferredName, AccountType, EMVTLV}
+import javax.smartcardio.TerminalFactory
+
+import org.emv.tlv.{AccountType, ApplicationPreferredName, ApplicationPriorityIndicator, EMVTLV}
 import org.emv.tlv.EMVTLV.EMVParser
 import org.tlv.HexUtils
 import org.tlv.TLV.{BerTLV, BerTag}
 import org.tlv.HexUtils._
+import org.emv.Card
+
+import scalaz._
+import scalaz.concurrent.Task
 val a = HexUtils.hex2Bytes("A0")(0)
 //HexUtils.toHex(List(a))
 val b = 0xA0.toByte
@@ -15,62 +21,31 @@ val y = f match {
 val h: Seq[Byte] = "00".fromHex
 h.toHex
 
-val tag: BerTag = "61"
-tag.isConstructed
-val input2 = HexUtils.hex2Bytes("9F0702FFFF")
-trait Spec[A, V] {
-  def a: A
-  def v: V
+
+val t1 = Task {
+  8
 }
-trait SpecC extends Spec[Int, Int]
-//trait Par[L[A, V <: Int] <: Spec[A, V]] {
-//
-//  def bgagaga: A
-//
-//}
 
-
-//case class ParC(i:Int) extends SpecC {
-//
-//  override def a: Int = i
-//
-//  override def v: Int = i
-//
-//}
-
-//trait L[U] {
-//
-//  def u: U
-//
-//}
-//
-//trait LL extends L[Int] {
-//
-//  def u = 8
-//
-//}
-//
-//
-//trait LLL extends L[String] {
-//
-//  def u = "Strei"
-//
-//}
-//
-//case class PFF(val v: String) extends LL with LLL
-//
-//println(PFF("dsada"))
-trait T  {
-
-  abstract class C
-
-
-  def c: C
+val t2 = Task {
+  6
 }
-trait T1 extends T {
+
+for {
+  a <- t1
+  b <- t2
+} yield ( a + b)
 
 
+t1.unsafePerformSyncAttempt match {
+  case \/-(x) => println(x)
+  case _ =>   
 }
 
 
+Card.getReaders.unsafePerformSyncAttempt match {
+  case \/-(x) => x.map(l => println(l))
+  case e => println(e)
+}
 
+
+TerminalFactory.getDefault.terminals.list

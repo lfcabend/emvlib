@@ -2,15 +2,19 @@ package org.emv.tlv
 
 import java.nio.charset.StandardCharsets
 import java.util.Currency
+
 import org.emv.tlv.EMVTLV.EMVBinaryWithVarLengthSpec
-import org.iso7816.AID
+import org.iso7816._
 import org.joda.time.LocalDate
 import org.tlv.{BinaryParsers, HexUtils}
 import org.tlv.TLV._
+import org.tlv.HexUtils._
+import sun.awt.X11.XConstants
 
 import scala.util.Try
 import scala.util.matching.Regex
-import scalaz.{\/-, -\/, \/}
+import scalaz.{-\/, \/, \/-}
+import scala.language.postfixOps
 
 /**
   * Created by Lau on 5/22/2016.
@@ -236,6 +240,10 @@ object EMVTLV {
           case -\/(l) => -\/(l)
         }
       })
+
+    override def toString(): String =
+      s"${super.toString}\n" + list.map(x => s"\t${x._1} ${BerTLV.encodeLength(x._2).toHex} (${x._2})").mkString("\n")
+
   }
 
   trait LeafToStringHelper {
@@ -411,6 +419,9 @@ object EMVTLV {
     def parseCardRiskManagementDataObjectList1: Parser[CardRiskManagementDataObjectList1] =
       parseEMVBySpec(CardRiskManagementDataObjectList1, parseDOL(_))
 
+    def parseCardholderName: Parser[CardholderName] =
+      parseEMVBySpec(CardholderName, parseANS(CardholderName)(_))
+
     def parseAID(length: Int): Parser[AID] = parseB(length).map(AID(_))
 
     def parseDate(length: Int): Parser[LocalDate] =
@@ -448,6 +459,10 @@ object EMVTLV {
     def parseApplicationFileLocator: Parser[ApplicationFileLocator] =
       parseEMVBySpec(ApplicationFileLocator, parseAFLEntries(_))
 
+    def parseCardholderVerificationMethodResults: Parser[CardholderVerificationMethodResults] =
+      parseEMVBySpec(CardholderVerificationMethodResults, parseB(_))
+
+
     def parseAFLEntries(l: Int): Parser[List[AFLEntry]] =
       parseB(l).map(x => {
         val l: List[Seq[Byte]] = x.grouped(4).toList
@@ -460,7 +475,7 @@ object EMVTLV {
     def parseDOLItem: Parser[(BerTag, Int)] = for {
       t <- parseATag
       l <- parseALength
-    } yield((t, l))
+    } yield ((t, l))
 
     def parseDOLValue(list: List[(BerTag, Int)]): Parser[List[EMVTLVType]] = list match {
       case (x :: xs) => for {
@@ -473,6 +488,61 @@ object EMVTLV {
     //TODO
     def parseDOLTLVValue(x: (BerTag, Int)): Parser[EMVTLVType] = ???
 
+    def parseCardholderVerificationMethodsList: Parser[CardholderVerificationMethodList] =
+      parseEMVBySpec(CardholderVerificationMethodList, parseCardholderVerificationMethodListValue(_))
+
+    def parseCardholderVerificationMethodListValue(length: Int): Parser[(Seq[Byte], Seq[Byte], List[CVMRule])] = for {
+      x <- repN(4, parseSingleByte)
+      y <- repN(4, parseSingleByte)
+      rules <- repParsingForXByte(length - 8, parseCVMRule)
+    } yield (x, y, rules)
+
+    def parseCVMRule: Parser[CVMRule] = for {
+      m <- parseCVMMethodAndFail
+      c <- parseCVMCondition
+    } yield (CVMRule(m._1, m._2, c))
+
+    def parseCVMMethodAndFail: Parser[(Boolean, CVMMethodT)] = parseSingleByte map (x => {
+      val applySucceedingRule = (x & 0x40.toByte) == 0x40.toByte
+      (x & 0xBF) match {
+        case FailCVM.value => (applySucceedingRule, FailCVM)
+        case PlainTextPinICC.value => (applySucceedingRule, PlainTextPinICC)
+        case EncipheredPINOnline.value => (applySucceedingRule, EncipheredPINOnline)
+        case PlainTextPinICCAndSignature.value => (applySucceedingRule, PlainTextPinICCAndSignature)
+        case EncipheredPINICC.value => (applySucceedingRule, EncipheredPINICC)
+        case EncipheredPINICCAndSignature.value => (applySucceedingRule, EncipheredPINICCAndSignature)
+        case Signature.value => (applySucceedingRule, Signature)
+        case NoCVMRequired.value => (applySucceedingRule, NoCVMRequired)
+        case default => (applySucceedingRule, RFUMethod(x))
+      }
+    })
+
+    def parseCVMCondition: Parser[CVMConditionT] = parseSingleByte map {
+      case Always.value => Always
+      case UnattendedCash.value => UnattendedCash
+      case NotUnattendedManualAndNotPurchaseWithCashback.value => NotUnattendedManualAndNotPurchaseWithCashback
+      case TerminalSupportsCVM.value => TerminalSupportsCVM
+      case ManualCash.value => ManualCash
+      case PurchaseWithCashback.value => PurchaseWithCashback
+      case ApplicationCurrencyAndUnderX.value => ApplicationCurrencyAndUnderX
+      case ApplicationCurrencyAndOverX.value => ApplicationCurrencyAndOverX
+      case ApplicationCurrencyAndUnderY.value => ApplicationCurrencyAndUnderY
+      case ApplicationCurrencyAndOverY.value => ApplicationCurrencyAndOverY
+      case x@default => RFUCondition(x)
+    }
+
+    def parseCertificationAuthorityPublicKeyIndex: Parser[CertificationAuthorityPublicKeyIndex] =
+      parseEMVBySpec(CertificationAuthorityPublicKeyIndex, parseB(_))
+
+    def parseCertificationAuthorityPublicKeyIndexTerminal: Parser[CertificationAuthorityPublicKeyIndexTerminal] =
+      parseEMVBySpec(CertificationAuthorityPublicKeyIndexTerminal, parseB(_))
+
+    def parseCommandTemplate: Parser[CommandTemplate] =
+      parseEMVBySpec(CommandTemplate, parseB(_))
+
+    def parseCryptogramInformationData: Parser[CryptogramInformationData] =
+      parseEMVBySpec(CryptogramInformationData, parseB(_))
+
     def parseEMVTLV: Parser[EMVTLVType] = parseAccountType | parseAcquirerIdentifier |
       parseAdditionalTerminalCapabilities | parseAmountAuthorized | parseAmountOtherBinary |
       parseAmountOther | parseAmountReferenceCurrency | parseApplicationCryptogram |
@@ -481,10 +551,49 @@ object EMVTLV {
       parseApplicationPrimaryAccountNumber | parseApplicationPrimaryAccountNumberSequenceNumber |
       parseApplicationPriorityIndicator | parseApplicationReferenceCurrency | parseApplicationTemplate |
       parseApplicationTransactionCounter | parseApplicationUsageControl | parseApplicationVersion |
-      parseApplicationVersionNumberTerminal | parseAuthorisationCode | parseCardRiskManagementDataObjectList1
+      parseApplicationVersionNumberTerminal | parseAuthorisationCode | parseCardRiskManagementDataObjectList1 |
+      parseCardholderName
 
 
     def parseEMVTLV(in: String): ParseResult[EMVTLVType] = parse(parseEMVTLV, in)
+
+    def parseStatusWordByObject(st: StatusWordT): Parser[StatusWordT] = for {
+      x1 <- parseSingleByte
+      x2 <- parseSingleByte
+      if (x1 == st.sw1 && x2 == st.sw2)
+    } yield (st)
+
+
+    def parseStatusWord: Parser[StatusWordT] = parseStatusWordByObject(WrongLength) |
+      parseStatusWordByObject(WrongParameters) | parseStatusWordByObject(InstructionNotSupported) |
+      parseStatusWordByObject(ClassNotSupported) | parseStatusWordByObject(NoPrecisDiagnosis) | parseWrongLeField |
+      parseStatusWordByObject(NormalProcessingNoFurtherQualification) | parseSWMoreAvailable |
+      parseStatusWordByObject(WarningNonVolatileUnchangedEndOfFile) | parseStatusWordByObject(WarningNonVolatileUnchangedDeactivated) |
+      parseStatusWordByObject(WarningNonVolatileUnchangedFormatError) | parseStatusWordByObject(WarningNonVolatileUnchangedTerminatedState) |
+      parseStatusWordByObject(WarningNonVolatileUnchangedNoInput) | parseStatusWordByObject(WarningNonVolatileUnchangedPartCurrupted) |
+      parseStatusWordByObject(WarningNonVolatileUnchangedNoFurtherInfo) | parseAnyStatusWork
+
+    def parseWrongLeField: Parser[WrongLE] = for {
+      x1 <- parseSingleByte
+      if (x1 == WrongLE.sw1)
+      x2 <- parseSingleByte
+    } yield (WrongLE(x2))
+
+
+    def parseSWMoreAvailable: Parser[MoreAvailable] = for {
+      x1 <- parseSingleByte
+      if (x1 == MoreAvailable.sw1)
+      x2 <- parseSingleByte
+    } yield (MoreAvailable(x2))
+
+    def parseAnyStatusWork: Parser[StatusWord] = repN(2, parseSingleByte).map(x => {
+      StatusWord(x(0), x(1))
+    })
+
+    def parseSelectResponse: Parser[SelectResponse] = for {
+      t <- (parseEMVTLV ?)
+      st <- parseStatusWord
+    } yield (SelectResponse(t, st))
 
   }
 
