@@ -3,6 +3,7 @@ package org.emv.tlv
 import java.nio.charset.StandardCharsets
 import java.util.Currency
 
+import com.neovisionaries.i18n.CountryCode
 import org.emv.tlv.EMVTLV.EMVBinaryWithVarLengthSpec
 import org.iso7816._
 import org.joda.time.LocalDate
@@ -157,6 +158,36 @@ object EMVTLV {
 
   }
 
+  trait EMVCountryCodeSpec[R <: EMVTLVType] extends EMVNumericWithLengthSpec[CountryCode, R] {
+
+    val length: Int = 2
+
+    val max: Int = 3
+
+    val min: Int = 3
+
+  }
+
+  trait EMVCountryCodeSpecA2[R <: EMVTLVType] extends EMVAlphaSpec[CountryCode, R] {
+
+    val length: Int = 2
+
+    val max: Int = 2
+
+    val min: Int = 2
+
+  }
+
+  trait EMVCountryCodeSpecA3[R <: EMVTLVType] extends EMVAlphaSpec[CountryCode, R] {
+
+    val length: Int = 2
+
+    val max: Int = 3
+
+    val min: Int = 3
+
+  }
+
   trait EMVDateSpec[R <: EMVTLVType] extends EMVNumericWithLengthSpec[LocalDate, R] {
 
     val length: Int = 3
@@ -206,6 +237,8 @@ object EMVTLV {
   trait EMVTLVCons extends EMVTLVType with BerTLVConsT with ConsToStringHelper
 
   trait EMVTLVLeafWithCurrency extends EMVTLVLeaf with CurrencyHelper
+
+  trait EMVTLVLeafWithCountryCode extends EMVTLVLeaf with CountryCodeHelper
 
   trait EMVTLVLeafWithDate extends EMVTLVLeaf with DateHelper
 
@@ -395,6 +428,12 @@ object EMVTLV {
     def parseApplicationCurrencyCode: Parser[ApplicationCurrencyCode] =
       parseEMVBySpec(ApplicationCurrencyCode, parseCurrencyCode(_))
 
+    def parseIssuerCountryCode: Parser[IssuerCountryCode] =
+      parseEMVBySpec(IssuerCountryCode, parseCountryCode(_))
+
+    def parseIssuerCountryCodeA2: Parser[IssuerCountryCodeA2] =
+      parseEMVBySpec(IssuerCountryCodeA2, parseCountryCodeA(_, 2))
+
     def parseApplicationTransactionCounter: Parser[ApplicationTransactionCounter] =
       parseEMVBySpec(ApplicationTransactionCounter, parseB(_))
 
@@ -446,6 +485,29 @@ object EMVTLV {
         case Some(x) => x
       })
 
+    def parseCountryCode(length: Int): Parser[CountryCode] =
+      parseN(3, 3)(length).map((x: Seq[Byte]) => {
+        val num: Int = HexUtils.toHex(x).toInt
+        CountryCodeHelper.getCountryCodeInstance(num)
+      }).withFilter({
+        case Some(_) => true
+        case _ => false
+      }).withFailureMessage("number is not a country code").map({
+        case Some(x) => x
+      })
+
+    def parseCountryCodeA(length: Int, numberChar: Int): Parser[CountryCode] =
+      parseA(numberChar, numberChar)(length).map((x: Seq[Byte]) => {
+        val a2: String = toASCIIString(x)
+        CountryCodeHelper.getCountryCodeInstance(a2)
+      }).withFilter({
+        case Some(_) => true
+        case _ => false
+      }).withFailureMessage("string is not a country code").map({
+        case Some(x) => x
+      })
+
+
     def parseTemplateTag[T <: EMVTLVCons](template: TemplateSpec[T]): Parser[EMVTLVType] = parseEMVTLV.
       filter(x => {
         template.templateTags.contains(x.tag)
@@ -462,6 +524,8 @@ object EMVTLV {
     def parseCardholderVerificationMethodResults: Parser[CardholderVerificationMethodResults] =
       parseEMVBySpec(CardholderVerificationMethodResults, parseB(_))
 
+    def parseDataAuthenticationCode: Parser[DataAuthenticationCode] =
+      parseEMVBySpec(DataAuthenticationCode, parseB(_))
 
     def parseAFLEntries(l: Int): Parser[List[AFLEntry]] =
       parseB(l).map(x => {
@@ -543,6 +607,12 @@ object EMVTLV {
     def parseCryptogramInformationData: Parser[CryptogramInformationData] =
       parseEMVBySpec(CryptogramInformationData, parseB(_))
 
+    def parseDedicatedFileName: Parser[DedicatedFileName] =
+      parseEMVBySpec(DedicatedFileName, parseB(_).map(AID(_)))
+
+
+
+
     def parseEMVTLV: Parser[EMVTLVType] = parseAccountType | parseAcquirerIdentifier |
       parseAdditionalTerminalCapabilities | parseAmountAuthorized | parseAmountOtherBinary |
       parseAmountOther | parseAmountReferenceCurrency | parseApplicationCryptogram |
@@ -552,7 +622,8 @@ object EMVTLV {
       parseApplicationPriorityIndicator | parseApplicationReferenceCurrency | parseApplicationTemplate |
       parseApplicationTransactionCounter | parseApplicationUsageControl | parseApplicationVersion |
       parseApplicationVersionNumberTerminal | parseAuthorisationCode | parseCardRiskManagementDataObjectList1 |
-      parseCardholderName
+      parseCardholderName | parseCryptogramInformationData | parseDataAuthenticationCode | parseDedicatedFileName |
+      parseIssuerCountryCode
 
 
     def parseEMVTLV(in: String): ParseResult[EMVTLVType] = parse(parseEMVTLV, in)

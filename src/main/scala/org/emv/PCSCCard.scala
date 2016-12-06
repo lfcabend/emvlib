@@ -9,9 +9,35 @@ import scalaz.concurrent.Task
 /**
   * Created by lau on 7/2/16.
   */
-object Card {
+object PCSCCard extends CardTrait {
 
   val defaultProtocol: String = "*"
+
+  override def waitForCardOnTerminal: Task[Option[ConnectionContext]] = for {
+    reader <- selectReader(None)
+    card <- reader match {
+      case Some(r) => {
+        waitForCardOnTerminal(r, 1000)
+        connectToCard(r).flatMap(x => Task(Some(x)))
+      }
+      case _ => Task(None)
+    }
+  } yield (reader, card) match {
+    case (Some(r), Some(c)) => Some(PCSCConnectionContext(c, r))
+    case _ => None
+  }
+
+  override def transmit(context: ConnectionContext, commandBytes: Seq[Byte]): Task[Seq[Byte]] =
+    context match {
+      case PCSCConnectionContext(c, r) => transmit(c, commandBytes)
+      case _ => Task(Nil)
+    }
+
+  override def close(context: ConnectionContext): Task[Unit] =
+    context match {
+      case PCSCConnectionContext(c, r) => close(c)
+      case _ => Task(Unit)
+    }
 
   def getReaders: Task[Seq[CardTerminal]] = Task {
     TerminalFactory.getDefault.terminals.list.asScala
@@ -50,5 +76,10 @@ object Card {
     val responseCommand = channel.transmit(new CommandAPDU(commandBytes.toArray))
     responseCommand.getBytes.toList
   }
+
+  def close(card: javax.smartcardio.Card): Task[Unit] = Task {
+    card.disconnect(true)
+  }
+
 
 }

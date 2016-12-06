@@ -55,7 +55,7 @@ case class ApplicationInterchangeProfile(override val value: Seq[Byte]) extends 
   def withPerformTerminalRiskManagementUnSet: ApplicationInterchangeProfile =
     ApplicationInterchangeProfile(withBitInByteUnSet(value, 4, 1))
 
-  def isIssuerAuthenitcationSupported: Boolean = isBitSetInByte(value, 1, 1)
+  def isIssuerAuthenitcationSupported: Boolean = isBitSetInByte(value, 3, 1)
 
   def withIssuerAuthenitcationSupportedSet: ApplicationInterchangeProfile =
     ApplicationInterchangeProfile(withBitInByteSet(value, 3, 1))

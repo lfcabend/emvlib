@@ -12,7 +12,7 @@ case class CryptogramInformationData(override val value: Seq[Byte]) extends EMVT
 
   override val postFixLabel = Some(cidType.toString)
 
-  val cidType: CIDType.Value = value(0) match {
+  lazy val cidType: CIDType.Value = value(0) match {
     case x if (~x & 0xC0) == 0x00 => CIDType.AAC
     case x if (x & 0x40) == 0x40 => CIDType.TC
     case x if (x & 0x80) == 0x80 => CIDType.ARQC
