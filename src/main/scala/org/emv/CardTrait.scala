@@ -9,8 +9,8 @@ trait CardTrait {
 
   def waitForCardOnTerminal: Task[Option[ConnectionContext]]
 
-  def transmit(context: ConnectionContext, commandBytes: Seq[Byte]): Task[Seq[Byte]]
+  def transmit(context: Option[ConnectionContext], commandBytes: Seq[Byte]): Task[Seq[Byte]]
 
-  def close(context: ConnectionContext): Task[Unit]
+  def close(context: Option[ConnectionContext]): Task[Unit]
 
 }

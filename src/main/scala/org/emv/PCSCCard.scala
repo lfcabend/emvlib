@@ -27,15 +27,15 @@ object PCSCCard extends CardTrait {
     case _ => None
   }
 
-  override def transmit(context: ConnectionContext, commandBytes: Seq[Byte]): Task[Seq[Byte]] =
+  override def transmit(context: Option[ConnectionContext], commandBytes: Seq[Byte]): Task[Seq[Byte]] =
     context match {
-      case PCSCConnectionContext(c, r) => transmit(c, commandBytes)
+      case Some(PCSCConnectionContext(c, r)) => transmit(c, commandBytes)
       case _ => Task(Nil)
     }
 
-  override def close(context: ConnectionContext): Task[Unit] =
+  override def close(context: Option[ConnectionContext]): Task[Unit] =
     context match {
-      case PCSCConnectionContext(c, r) => close(c)
+      case Some(PCSCConnectionContext(c, r)) => close(c)
       case _ => Task(Unit)
     }
 
