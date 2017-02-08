@@ -1,12 +1,14 @@
 package org.emv.tlv
 
 import org.emv.tlv.EMVTLV.{EMVDefaultBinaryWithVarLengthSpec, EMVTLVLeaf}
-import org.tlv.TLV.BerTag
+import org.lau.tlv.ber._
+import scodec.bits._
+
 
 /**
   * Created by lau on 11/7/16.
   */
-case class ICCDynamicNumber(override val value: Seq[Byte]) extends EMVTLVLeaf() {
+case class ICCDynamicNumber(override val value: ByteVector) extends EMVTLVLeaf() {
 
   override val tag: BerTag = ICCDynamicNumber.tag
 
@@ -18,6 +20,13 @@ object ICCDynamicNumber extends EMVDefaultBinaryWithVarLengthSpec[ICCDynamicNumb
 
   override val minLength = 2
 
-  val tag: BerTag = "9F4C"
+  val tag: BerTag = berTag"9F4C"
+
+
+  import fastparse.byte.all._
+  import org.emv.tlv.EMVTLV.EMVTLVParser._
+
+  def parser: Parser[ICCDynamicNumber] =
+    parseEMVBySpec(ICCDynamicNumber, parseB(_))
 
 }

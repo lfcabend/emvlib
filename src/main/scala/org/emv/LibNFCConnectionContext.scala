@@ -9,5 +9,5 @@ case class LibNFCConnectionContext(ctxPtr: SWIGTYPE_p_p_nfc_context,
                                    ctx: SWIGTYPE_p_nfc_context,
                                    reader: SWIGTYPE_p_nfc_device,
                                    mod: nfc_modulation,
-                                   target: nfc_target)
+                                   target: Option[nfc_target])
   extends ConnectionContext

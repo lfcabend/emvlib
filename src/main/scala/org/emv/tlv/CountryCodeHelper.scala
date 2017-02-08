@@ -3,7 +3,8 @@ package org.emv.tlv
 import java.util.Currency
 
 import com.neovisionaries.i18n.CountryCode
-import org.tlv.HexUtils
+import org.lau.tlv.ber._
+import scodec.bits._
 
 /**
   * Created by lau on 11/7/16.
@@ -15,7 +16,7 @@ trait CountryCodeHelper  {
        |\t${countryCode.getName}
      """.stripMargin
 
-  val value: Seq[Byte] =  CountryCodeHelper.toValue(countryCode.getNumeric)
+  val value: ByteVector =  CountryCodeHelper.toValue(countryCode.getNumeric)
 
   val countryCode: CountryCode
 
@@ -24,9 +25,9 @@ trait CountryCodeHelper  {
 object CountryCodeHelper {
 
   def toString(countryCode: CountryCode): String = s"${countryCode.getName} " +
-    s"- ${countryCode.getAlpha3} (${HexUtils.toHex(toValue(countryCode.getNumeric))})"
+    s"- ${countryCode.getAlpha3} (${toValue(countryCode.getNumeric)})"
 
-  def toValue(num: Int) =  HexUtils.hex2Bytes(f"$num%04d")
+  def toValue(num: Int) =  ByteVector.fromValidHex(f"$num%04d")
 
   def getCountryCodeInstance(numericCode: Int): Option[CountryCode] =
     CountryCode.getByCode(numericCode) match {

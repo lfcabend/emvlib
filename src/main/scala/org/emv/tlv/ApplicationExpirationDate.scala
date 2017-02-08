@@ -1,8 +1,9 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.{EMVDateSpec, EMVTLVLeafWithDate, LeafToStringHelper}
+import org.emv.tlv.EMVTLV.{EMVDateSpec, EMVTLVLeafWithDate, EMVTLVParser, LeafToStringHelper}
 import org.joda.time.LocalDate
-import org.tlv.TLV.{BerTag, BerTLVLeafT}
+import org.lau.tlv.ber._
+import scodec.bits._
 
 /**
   * Created by lau on 6/4/16.
@@ -15,6 +16,13 @@ case class ApplicationExpirationDate(val date: LocalDate) extends EMVTLVLeafWith
 
 object ApplicationExpirationDate extends EMVDateSpec[ApplicationExpirationDate] {
 
-  val tag: BerTag = "5F24"
+  val tag: BerTag = berTag"5F24"
+
+
+  import fastparse.byte.all._
+  import org.emv.tlv.EMVTLV.EMVTLVParser._
+
+  def parser: Parser[ApplicationExpirationDate] =
+    parseEMVBySpec(ApplicationExpirationDate, parseDate(_))
 
 }

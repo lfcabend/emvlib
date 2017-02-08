@@ -2,7 +2,9 @@ package org.emv.tlv
 
 import org.joda.time.LocalDate
 import org.joda.time.format.DateTimeFormat
-import org.tlv.HexUtils
+
+import org.lau.tlv.ber._
+import scodec.bits._
 
 /**
   * Created by lau on 6/4/16.
@@ -14,7 +16,7 @@ trait DateHelper {
        |\t${DateHelper.formatterPretty.print(date)}
      """.stripMargin
 
-  val value: Seq[Byte] = DateHelper.date2Bytes(date)
+  val value: ByteVector = DateHelper.date2Bytes(date)
 
   val date: LocalDate
 
@@ -27,8 +29,8 @@ object DateHelper {
 
   val formatterPretty = DateTimeFormat.longDate()
 
-  def date2Bytes(date: LocalDate): Seq[Byte] = HexUtils.hex2Bytes(formatter.print(date))
+  def date2Bytes(date: LocalDate): ByteVector = ByteVector.fromValidHex(formatter.print(date))
 
-  def bytesToDate(bytes: Seq[Byte]): LocalDate = formatter.parseLocalDate(HexUtils.toHex(bytes))
+  def bytesToDate(bytes: ByteVector): LocalDate = formatter.parseLocalDate(bytes.toHex)
 
 }

@@ -1,12 +1,14 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.{EMVDefaultBinaryWithLengthSpec, EMVBinaryWithLengthSpec, TemplateTag, EMVTLVLeaf}
-import org.tlv.TLV.{BerTag, BerTLVLeafT}
+import fastparse.byte.all._
+import org.emv.tlv.EMVTLV.{EMVDefaultBinaryWithLengthSpec, EMVTLVLeaf, EMVTLVParser}
+import org.lau.tlv.ber._
+import scodec.bits._
 
 /**
   * Created by lau on 6/2/16.
   */
-case class ApplicationCryptogram (override val value: Seq[Byte])
+case class ApplicationCryptogram(override val value: ByteVector)
   extends EMVTLVLeaf {
 
   override val tag: BerTag = ApplicationCryptogram.tag
@@ -15,8 +17,14 @@ case class ApplicationCryptogram (override val value: Seq[Byte])
 
 object ApplicationCryptogram extends EMVDefaultBinaryWithLengthSpec[ApplicationCryptogram] {
 
-  val tag: BerTag = "9F36"
+  val tag: BerTag = berTag"9F36"
 
   val length: Int = 8
+
+  import fastparse.byte.all.Parser
+  import org.emv.tlv.EMVTLV.EMVTLVParser._
+
+  def parser: Parser[ApplicationCryptogram] =
+    parseEMVBySpec(ApplicationCryptogram, parseB(_))
 
 }

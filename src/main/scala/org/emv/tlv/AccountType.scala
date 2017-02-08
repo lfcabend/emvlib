@@ -1,11 +1,9 @@
 package org.emv.tlv
 
 import org.emv.tlv.EMVTLV._
-import org.iso7816.AIDCategory._
-import org.tlv.HexUtils
-import org.tlv.TLV.{BerTLV, BerTag, BerTLVLeafT}
-
-import org.tlv.HexUtils.hex2Bytes
+import org.lau.tlv.ber._
+import scodec.bits.ByteVector
+import scodec.bits._
 
 trait AccountTypeT extends EMVTLVLeaf {
 
@@ -34,7 +32,7 @@ trait AccountTypeT extends EMVTLVLeaf {
 
 }
 
-case class AccountType(override val value: Seq[Byte]) extends AccountTypeT
+case class AccountType(override val value: ByteVector) extends AccountTypeT
 
 object AccountTypeEnum extends Enumeration {
 
@@ -46,16 +44,25 @@ trait AccountTypeSpec extends EMVDefaultNumericWithLengthSpec[AccountType] {
 
   val length = 1
 
-  val unSpecifiedValue = hex2Bytes("00")
-  val chequeDebitValue = hex2Bytes("20")
-  val savingsValue = hex2Bytes("10")
-  val creditValue = hex2Bytes("30")
+  val unSpecifiedValue = hex"00"
+  val chequeDebitValue = hex"20"
+  val savingsValue = hex"10"
+  val creditValue = hex"30"
 
-  val tag: BerTag = "5F57"
+  val tag: BerTag = berTag"5F57"
 
   override val max: Int = 2
 
   override val min: Int = 2
+
+
 }
 
-object AccountType extends AccountTypeSpec
+object AccountType extends AccountTypeSpec {
+
+  import fastparse.byte.all.Parser
+  import org.emv.tlv.EMVTLV.EMVTLVParser._
+
+  def parser: Parser[AccountType] = parseEMVBySpec(AccountType, parseN(AccountType)(_))
+
+}

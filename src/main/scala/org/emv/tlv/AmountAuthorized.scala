@@ -1,7 +1,8 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.{EMVDefaultNumericWithLengthSpec, EMVNumericWithLengthSpec, EMVTLVLeaf, LeafToStringHelper}
-import org.tlv.TLV.{BerTag, BerTLVLeafT}
+import org.emv.tlv.EMVTLV.{EMVDefaultNumericWithLengthSpec, EMVTLVLeaf, EMVTLVParser}
+import org.lau.tlv.ber._
+import scodec.bits.ByteVector
 
 /**
   * Created by lau on 6/1/16.
@@ -14,7 +15,7 @@ trait AmountAuthorizedT extends EMVTLVLeaf {
 
 }
 
-case class AmountAuthorized (override val value: Seq[Byte]) extends AmountAuthorizedT {
+case class AmountAuthorized(override val value: ByteVector) extends AmountAuthorizedT {
 
   require(value.length == AmountAuthorized.length)
 
@@ -25,7 +26,7 @@ trait AmountAuthorizedSpec extends EMVDefaultNumericWithLengthSpec[AmountAuthori
 
   val length = 6
 
-  val tag: BerTag = "9F02"
+  val tag: BerTag = berTag"9F02"
 
   override val max: Int = 12
 
@@ -33,5 +34,13 @@ trait AmountAuthorizedSpec extends EMVDefaultNumericWithLengthSpec[AmountAuthori
 
 }
 
-object AmountAuthorized extends AmountAuthorizedSpec
+object AmountAuthorized extends AmountAuthorizedSpec {
+
+  import fastparse.byte.all.Parser
+  import org.emv.tlv.EMVTLV.EMVTLVParser._
+
+  def parser: Parser[AmountAuthorized] =
+    parseEMVBySpec(AmountAuthorized, parseN(AmountAuthorized)(_))
+
+}
 

@@ -1,6 +1,7 @@
 package org.iso7816
 
-import org.tlv.HexUtils._
+import fastparse.parsers.Terminals
+import scodec.bits.ByteVector
 
 /**
   * Created by lau on 6/17/16.
@@ -15,7 +16,7 @@ trait StatusWordT {
 
   val sw2: Byte
 
-  def serialize: Seq[Byte] =  List(sw1, sw2)
+  def serialize: ByteVector = ByteVector(sw1, sw2)
 
 }
 
@@ -71,7 +72,6 @@ object WarningNonVolatileUnchangedNoInput extends WarningStatusWord62T {
   override def stringMessage(): String = s"${preFixMessage}, No input data available from a sensor on the card"
 
 }
-
 
 
 object WarningNonVolatileUnchangedPartCurrupted extends WarningStatusWord62T {
@@ -154,6 +154,45 @@ trait FileOrAppNotFound {
 
 
 case class StatusWord(override val sw1: Byte, override val sw2: Byte) extends StatusWordT
+
+object StatusWord {
+
+  import fastparse.byte.all._
+
+  def parseStatusWordByObject(st: StatusWordT): Parser[StatusWordT] =
+    (for {
+      x1 <- AnyElem.!
+      x2 <- AnyElem.!
+      if (x1.toByte() == st.sw1 && x2.toByte() == st.sw2)
+    } yield ((x1, x2))).map(x => st)
+
+
+  def parseStatusWord: Parser[StatusWordT] = parseStatusWordByObject(WrongLength) |
+    parseStatusWordByObject(WrongParameters) | parseStatusWordByObject(InstructionNotSupported) |
+    parseStatusWordByObject(ClassNotSupported) | parseStatusWordByObject(NoPrecisDiagnosis) | parseWrongLeField |
+    parseStatusWordByObject(NormalProcessingNoFurtherQualification) | parseSWMoreAvailable |
+    parseStatusWordByObject(WarningNonVolatileUnchangedEndOfFile) | parseStatusWordByObject(WarningNonVolatileUnchangedDeactivated) |
+    parseStatusWordByObject(WarningNonVolatileUnchangedFormatError) | parseStatusWordByObject(WarningNonVolatileUnchangedTerminatedState) |
+    parseStatusWordByObject(WarningNonVolatileUnchangedNoInput) | parseStatusWordByObject(WarningNonVolatileUnchangedPartCurrupted) |
+    parseStatusWordByObject(WarningNonVolatileUnchangedNoFurtherInfo) //| parseAnyStatusWork
+
+  def parseWrongLeField: Parser[WrongLE] = for {
+    x1 <- AnyElem.!
+    if (x1 == WrongLE.sw1)
+    x2 <- AnyElem.!
+  } yield (WrongLE(x2.toByte()))
+
+
+  def parseSWMoreAvailable: Parser[MoreAvailable] = for {
+    x1 <- AnyElem.!
+    if (x1 == MoreAvailable.sw1)
+    x2 <- AnyElem.!
+  } yield (MoreAvailable(x2.toByte()))
+
+  def parseAnyStatusWork: Parser[StatusWord] =
+    AnyElem.!.rep(exactly = 2).!.map(x => StatusWord(x(0), x(1)))
+
+}
 
 object NoPrecisDiagnosis extends StatusWordT {
 

@@ -2,8 +2,9 @@ package org.emv.tlv
 
 import java.util.Currency
 
-import org.emv.tlv.EMVTLV.{EMVAlphaNumericWithVarLengthSpec, EMVAlphaNumericSpec, EMVTLVLeaf, LeafToStringHelper}
-import org.tlv.TLV.{BerTag, BerTLVLeafT}
+import org.emv.tlv.EMVTLV.{EMVAlphaNumericWithVarLengthSpec, EMVTLVLeaf}
+import org.lau.tlv.ber._
+import scodec.bits._
 
 /**
   * Created by lau on 6/6/16.
@@ -18,19 +19,26 @@ case class ApplicationReferenceCurrency(val currencies: List[Currency])
 
   override val tag: BerTag = ApplicationReferenceCurrency.tag
 
-  override val value: Seq[Byte] = currencies.map((x: Currency) => CurrencyHelper.toValue(x.getNumericCode)).
-    foldRight[Seq[Byte]](Nil)(_ ++ _)
+  override val value: ByteVector = currencies.map((x: Currency) => CurrencyHelper.toValue(x.getNumericCode)).
+    foldRight[ByteVector](ByteVector.empty)(_ ++ _)
 
 }
 
 object ApplicationReferenceCurrency extends EMVAlphaNumericWithVarLengthSpec[List[Currency], ApplicationReferenceCurrency] {
 
-  val tag: BerTag = "9F3B"
+  val tag: BerTag = berTag"9F3B"
 
   override val max: Int = 16
   override val min: Int = 4
   override val maxLength: Int = 8
   override val minLength: Int = 2
+
+  import fastparse.byte.all._
+  import org.emv.tlv.EMVTLV.EMVTLVParser._
+
+  def parser: Parser[ApplicationReferenceCurrency] =
+    parseEMVBySpec(ApplicationReferenceCurrency, x => P(parseCurrencyCode(2).rep(exactly = x / 2).map(_.toList)))
+
 }
 
 

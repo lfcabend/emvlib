@@ -2,29 +2,40 @@ package org.emv.tlv
 
 import java.nio.charset.StandardCharsets
 
-import org.emv.tlv.EMVTLV.EMVTLVLeafTextable
-import org.tlv.TLV.{BerTag, BerTLVLeafT}
+import fastparse.byte.all._
+import org.emv.tlv.EMVTLV.{EMVDefaultAlphaNumericSpecialWithVarLengthSpec, EMVTLVLeafTextable}
+import org.emv.tlv.EMVTLV.EMVTLVParser._
+import org.lau.tlv.ber._
+import scodec.bits._
 
 /**
   * Created by lau on 6/5/16.
   */
-case class ApplicationPreferredName(override val value: Seq[Byte]) extends EMVTLVLeafTextable {
+case class ApplicationPreferredName(override val value: ByteVector) extends EMVTLVLeafTextable {
 
   override val tag: BerTag = ApplicationPreferredName.tag
 
 }
 
-object ApplicationPreferredName {
+object ApplicationPreferredName extends EMVDefaultAlphaNumericSpecialWithVarLengthSpec[ApplicationPreferredName] {
 
-  def apply(text: String) = new ApplicationPreferredName(text.getBytes(StandardCharsets.US_ASCII))
-
-  val tag: BerTag = "9F12"
+  val tag: BerTag = berTag"9F12"
 
   val length: Int = 16
 
   val max: Int = 16
 
   val min: Int = 1
+
+  import fastparse.byte.all._
+  import org.emv.tlv.EMVTLV.EMVTLVParser._
+
+  def parser: Parser[ApplicationPreferredName] =
+    parseEMVBySpec(ApplicationPreferredName, parseANS(ApplicationPreferredName)(_))
+
+  override val maxLength: Int = 16
+
+  override val minLength: Int = 1
 
 }
 

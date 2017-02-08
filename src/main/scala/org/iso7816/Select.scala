@@ -1,6 +1,6 @@
 package org.iso7816
 
-import org.emv.tlv.EMVTLV.EMVTLVType
+import org.emv.tlv.EMVTLV.{EMVTLVParser, EMVTLVType}
 import org.iso7816.APDU.{APDUCommand, APDUCommandResponse, ParamContainer}
 
 /**
@@ -17,6 +17,19 @@ case class SelectResponse(val template: Option[EMVTLVType], val statusWord: Stat
 
 }
 
+object SelectResponse {
+
+  import fastparse.byte.all._
+  import org.emv.tlv.EMVTLV.EMVTLVParser._
+
+  def parser : Parser[SelectResponse] = for {
+    t <- (parseEMVTLV.?)
+    st <- StatusWord.parseStatusWord
+    _ <- fastparse.byte.all.End
+  } yield (SelectResponse(t, st))
+
+}
+
 object Select {
 
   def selectDFFirstOccurenceWithFCIResponse(aid: AID) =
@@ -26,25 +39,46 @@ object Select {
 
 
 object P1SelectMFDFEF extends ParamContainer {
+
+  override def toString = "Select MFDFEF"
+
   val value = 0x00.toByte
 }
 object P1SelectChildDF extends ParamContainer {
+
+  override def toString = "Select ChildDF"
+
   val value = 0x01.toByte
 }
 object P1SelectEFUnderCurrent extends ParamContainer {
+
+  override def toString = "Select EF Under Current"
+
   val value = 0x02.toByte
 }
 object P1SelectParentDF extends ParamContainer {
+
+  override def toString = "Select Parent DF"
+
   val value = 0x03.toByte
 }
 
 object P1SelectDFName extends ParamContainer {
+
+  override def toString = "Select DF Name"
+
   val value = 0x04.toByte
 }
 object P1SelectFromMF extends ParamContainer {
+
+  override def toString = "Select from MF"
+
   val value = 0x08.toByte
 }
 object P1SelectFromDF extends ParamContainer {
+
+  override def toString = "Select from DF"
+
   val value = 0x09.toByte
 }
 
@@ -58,11 +92,15 @@ trait FirstOrOnlyOccurrence extends FileOccurrence {
 
   val occurrence: Byte = 0x00
 
+  override def toString = "First or Only Occurrence"
+
 }
 
 trait LastOccurrence extends FileOccurrence {
 
   val occurrence: Byte = 0x01
+
+  override def toString = "Last Occurrence"
 
 }
 
@@ -71,11 +109,17 @@ trait NextOccurrence extends FileOccurrence {
 
   val occurrence: Byte = 0x02
 
+  override def toString = "Next Occurrence"
+
 }
 
 trait PreviousOccurrence extends FileOccurrence {
 
   val occurrence: Byte = 0x02
+
+
+  override def toString = "Previous Occurrence"
+
 
 }
 
@@ -89,6 +133,9 @@ trait ReturnFCITemplate extends FileControlInformation {
 
   val info: Byte = 0x00
 
+
+  override def toString = "Return FCI Template"
+
 }
 
 
@@ -96,20 +143,30 @@ trait ReturnFCPTemplate extends FileControlInformation {
 
   val info: Byte = 0x01
 
+  override def toString = "Return FCP Template"
+
 }
 
 trait ReturnFMDTemplate extends FileControlInformation {
 
   val info: Byte = 0x02
 
+  override def toString = "Return FMD Template"
+
+
 }
 
 
 trait NoResponseOrProprietary extends FileControlInformation {
 
+
   val info: Byte = 0x03
 
+  override def toString = "No response or proprietary"
+
+
 }
+
 
 
 trait SelectP2 extends FileControlInformation with FileOccurrence with ParamContainer {
@@ -118,7 +175,11 @@ trait SelectP2 extends FileControlInformation with FileOccurrence with ParamCont
 
 }
 
-object FirstOrOnlyOccurrenceWithFCITemplate extends SelectP2 with FirstOrOnlyOccurrence with ReturnFCITemplate
+object FirstOrOnlyOccurrenceWithFCITemplate extends SelectP2 with FirstOrOnlyOccurrence with ReturnFCITemplate {
+
+    override def toString = "First or Only Occurrence/Return FCI Template"
+
+}
 object FirstOrOnlyOccurrenceWithFCPTemplate extends SelectP2 with FirstOrOnlyOccurrence with ReturnFCPTemplate
 object FirstOrOnlyOccurrenceWithFMDTemplate extends SelectP2 with FirstOrOnlyOccurrence with ReturnFMDTemplate
 object FirstOrOnlyOccurrenceWithNoResponseOrProprietary extends SelectP2 with FirstOrOnlyOccurrence with NoResponseOrProprietary

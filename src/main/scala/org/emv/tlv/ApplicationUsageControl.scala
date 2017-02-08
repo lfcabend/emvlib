@@ -2,12 +2,14 @@ package org.emv.tlv
 
 import org.emv.tlv.ByteUtils._
 import org.emv.tlv.EMVTLV._
-import org.tlv.TLV.BerTag
+import org.lau.tlv.ber._
+import scodec.bits._
+
 
 /**
   * Created by lau on 6/8/16.
   */
-case class ApplicationUsageControl(override val value: Seq[Byte])
+case class ApplicationUsageControl(override val value: ByteVector)
   extends EMVTLVLeaf {
 
   override val tag: BerTag = ApplicationUsageControl.tag
@@ -111,8 +113,14 @@ case class ApplicationUsageControl(override val value: Seq[Byte])
 
 object ApplicationUsageControl extends EMVDefaultBinaryWithLengthSpec[ApplicationUsageControl] {
 
-  val tag: BerTag = "9F07"
+  val tag: BerTag = berTag"9F07"
 
   val length: Int = 2
+
+  import fastparse.byte.all._
+  import org.emv.tlv.EMVTLV.EMVTLVParser._
+
+  def parser: Parser[ApplicationUsageControl] =
+    parseEMVBySpec(ApplicationUsageControl, parseB(_))
 
 }

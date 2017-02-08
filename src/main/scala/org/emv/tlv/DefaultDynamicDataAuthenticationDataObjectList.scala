@@ -1,7 +1,8 @@
 package org.emv.tlv
 
 import org.emv.tlv.EMVTLV.EMVDOLSpec
-import org.tlv.TLV.BerTag
+import org.lau.tlv.ber._
+import scodec.bits._
 
 /**
   * Created by lau on 11/3/16.
@@ -15,7 +16,7 @@ case class DefaultDynamicDataAuthenticationDataObjectList(val list: List[(BerTag
 
 object DefaultDynamicDataAuthenticationDataObjectList extends EMVDOLSpec[DefaultDynamicDataAuthenticationDataObjectList] {
 
-  val tag: BerTag = "DFFF01"
+  val tag: BerTag = berTag"DFFF01"
 
   override val maxLength: Int = 252
 

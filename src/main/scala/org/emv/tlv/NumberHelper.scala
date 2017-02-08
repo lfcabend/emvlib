@@ -1,11 +1,13 @@
 package org.emv.tlv
 
+import scodec.bits.ByteVector
+
 /**
   * Created by lau on 6/7/16.
   */
 trait BinaryNumber {
 
-  def value: Seq[Byte]
+  def value: ByteVector
 
   def number: Int = NumberHelper.fromBinary(value)
 
@@ -13,7 +15,7 @@ trait BinaryNumber {
 
 trait TextableNumber {
 
-  def value: Seq[Byte]
+  def value: ByteVector
 
   def text: String
 
@@ -23,7 +25,7 @@ trait TextableNumber {
 
 object NumberHelper {
 
-  def fromBinary(value: Seq[Byte]): Int = BigInt(1, value.toArray).intValue()
+  def fromBinary(value: ByteVector): Int = BigInt(1, value.toArray).intValue()
 
   def fromText(text: String): Int = text.toInt
 

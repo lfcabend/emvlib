@@ -1,7 +1,11 @@
 package org.emv.tlv
 
 import java.util.Currency
-import org.tlv.HexUtils
+
+import org.lau.tlv.ber._
+import scodec.bits._
+
+import scodec.bits.ByteVector
 
 import scala.collection.JavaConverters._
 
@@ -15,7 +19,7 @@ trait CurrencyHelper {
        |\t${CurrencyHelper.toString(currency)}
      """.stripMargin
 
-  val value: Seq[Byte] =  CurrencyHelper.toValue(currency.getNumericCode)
+  val value: ByteVector =  CurrencyHelper.toValue(currency.getNumericCode)
 
   val currency: Currency
 
@@ -24,10 +28,9 @@ trait CurrencyHelper {
 object CurrencyHelper {
 
   def toString(currency: Currency): String = s"${currency.getDisplayName} " +
-    s"- ${currency.getCurrencyCode} (${HexUtils.toHex(toValue(currency.getNumericCode))})"
+    s"- ${currency.getCurrencyCode} (${toValue(currency.getNumericCode)})"
 
-
-  def toValue(num: Int) =  HexUtils.hex2Bytes(f"$num%04d")
+  def toValue(num: Int) =  ByteVector.fromValidHex(f"$num%04d")
 
   def getCurrencyInstance(numericCode: Int): Option[Currency] =
     Currency.getAvailableCurrencies().asScala.

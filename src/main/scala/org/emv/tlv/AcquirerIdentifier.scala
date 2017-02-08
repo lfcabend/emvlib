@@ -1,8 +1,8 @@
 package org.emv.tlv
 
 import org.emv.tlv.EMVTLV._
-import org.tlv.HexUtils._
-import org.tlv.TLV.{BerTag, BerTLVLeafT}
+import org.lau.tlv.ber._
+import scodec.bits.ByteVector
 
 trait AcquirerIdentifierT extends EMVTLVLeaf with NumberTextable {
 
@@ -10,13 +10,13 @@ trait AcquirerIdentifierT extends EMVTLVLeaf with NumberTextable {
 
 }
 
-case class AcquirerIdentifier(override val value: Seq[Byte]) extends AcquirerIdentifierT
+case class AcquirerIdentifier(override val value: ByteVector) extends AcquirerIdentifierT
 
 trait AcquirerIdentifierSpec extends EMVDefaultNumericWithLengthSpec[AcquirerIdentifier] {
 
   val length = 6
 
-  val tag: BerTag = "9F01"
+  val tag: BerTag = berTag"9F01"
 
   val min = 6
 
@@ -24,4 +24,12 @@ trait AcquirerIdentifierSpec extends EMVDefaultNumericWithLengthSpec[AcquirerIde
 
 }
 
-object AcquirerIdentifier extends AcquirerIdentifierSpec
+object AcquirerIdentifier extends AcquirerIdentifierSpec {
+
+  import fastparse.byte.all.Parser
+  import org.emv.tlv.EMVTLV.EMVTLVParser._
+
+  def parser: Parser[AcquirerIdentifier] =
+    parseEMVBySpec(AcquirerIdentifier, parseN(AcquirerIdentifier)(_))
+
+}

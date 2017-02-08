@@ -3,7 +3,8 @@ package org.emv.tlv
 import java.util.Currency
 
 import com.neovisionaries.i18n.LanguageCode
-import org.tlv.HexUtils
+import org.lau.tlv.ber._
+import scodec.bits._
 
 /**
   * Created by lau on 11/17/16.
@@ -15,7 +16,7 @@ trait LanguageHelper {
        |\t${LanguageHelper.toString(language)}
      """.stripMargin
 
-  val value: Seq[Byte] =  LanguageHelper.toValue(language)
+  val value: ByteVector =  LanguageHelper.toValue(language)
 
   val language: LanguageCode
 
@@ -25,7 +26,7 @@ object LanguageHelper {
 
   def toString(language: LanguageCode): String = s"${language.getName}"
 
-  def toValue(language: LanguageCode) = language.getName.getBytes("ASCII")
+  def toValue(language: LanguageCode) = ByteVector(language.getName.getBytes("ASCII"))
 
   def getLanguageInstance(languageString: String): Option[LanguageCode] =
     LanguageCode.valueOf(languageString) match {

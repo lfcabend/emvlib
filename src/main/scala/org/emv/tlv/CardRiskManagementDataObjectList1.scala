@@ -1,7 +1,8 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.{EMVDOLSpec, EMVBinaryWithVarLengthSpec, EMVDefaultBinaryWithVarLengthSpec, EMVTLVLeaf}
-import org.tlv.TLV.BerTag
+import org.emv.tlv.EMVTLV.{EMVDOLSpec}
+import org.lau.tlv.ber._
+import scodec.bits._
 
 /**
   * Created by lau on 6/16/16.
@@ -15,10 +16,16 @@ case class CardRiskManagementDataObjectList1(val list: List[(BerTag, Int)])
 
 object CardRiskManagementDataObjectList1 extends EMVDOLSpec[CardRiskManagementDataObjectList1] {
 
-  val tag: BerTag = "8C"
+  val tag: BerTag = berTag"8C"
 
   override val maxLength: Int = 252
 
   override val minLength: Int = 0
+
+  import fastparse.byte.all._
+  import org.emv.tlv.EMVTLV.EMVTLVParser._
+
+  def parser: Parser[CardRiskManagementDataObjectList1] =
+    parseEMVBySpec(CardRiskManagementDataObjectList1, parseDOL(_))
 
 }

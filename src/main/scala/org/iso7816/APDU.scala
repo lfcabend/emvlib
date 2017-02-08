@@ -1,5 +1,7 @@
 package org.iso7816
 
+import scodec.bits.ByteVector
+
 object APDU {
 
   type Class = Byte
@@ -25,25 +27,25 @@ object APDU {
                              ins: Instruction,
                              p1: P1,
                              p2: P2,
-                             data: Option[Seq[Byte]], le: Option[Byte]) {
+                             data: Option[ByteVector], le: Option[Byte]) {
 
-      def serialize: Seq[Byte] = {
-        val header: Seq[Byte] = cla :: ins :: p1 :: p2 :: Nil
-        val headerPlusData = data match {
-          case Some(x) => header ++ List(x.size.toByte) ++ x
+      def serialize = {
+        val header = ByteVector(cla :: ins :: p1 :: p2 :: Nil)
+        val headerPlusData: ByteVector = data match {
+          case Some(x) => header ++ ByteVector(x.size.toByte) ++ x
           case None    => header
         }
         le match {
-          case Some(x) => headerPlusData ++ List(x)
+          case Some(x) => headerPlusData ++ ByteVector(x)
           case None => headerPlusData
         }
       }
 
   }
 
-  abstract class APDUCommandResponse(responseBody: Option[Seq[Byte]], statusWord: StatusWordT) {
+  abstract class APDUCommandResponse(responseBody: Option[ByteVector], statusWord: StatusWordT) {
 
-    def serialize: Seq[Byte] = {
+    def serialize: ByteVector = {
       responseBody match {
         case Some(x) => x ++ statusWord.serialize
         case None => statusWord.serialize

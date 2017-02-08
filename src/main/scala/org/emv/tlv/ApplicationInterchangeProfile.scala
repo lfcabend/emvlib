@@ -1,13 +1,18 @@
 package org.emv.tlv
 
+import fastparse.byte.all._
 import org.emv.tlv.ByteUtils._
-import org.emv.tlv.EMVTLV.{EMVDefaultBinaryWithLengthSpec, EMVBinaryWithLengthSpec, EMVTLVLeaf, LeafToStringHelper}
-import org.tlv.TLV.{BerTag, BerTLVLeafT}
+import org.emv.tlv.EMVTLV.{EMVBinaryWithLengthSpec, EMVDefaultBinaryWithLengthSpec, EMVTLVLeaf, LeafToStringHelper}
+import org.lau.tlv.ber._
+import scodec.bits._
+import org.emv.tlv.ByteUtils._
+import org.emv.tlv.EMVTLV.EMVTLVParser._
+
 
 /**
   * Created by lau on 6/5/16.
   */
-case class ApplicationInterchangeProfile(override val value: Seq[Byte]) extends EMVTLVLeaf {
+case class ApplicationInterchangeProfile(override val value: ByteVector) extends EMVTLVLeaf {
 
   override val tag: BerTag = ApplicationInterchangeProfile.tag
 
@@ -83,8 +88,14 @@ case class ApplicationInterchangeProfile(override val value: Seq[Byte]) extends 
 
 object ApplicationInterchangeProfile extends EMVDefaultBinaryWithLengthSpec[ApplicationInterchangeProfile] {
 
-  val tag: BerTag = "82"
+  val tag: BerTag = berTag"82"
 
   val length: Int = 2
+
+  import fastparse.byte.all._
+  import org.emv.tlv.EMVTLV.EMVTLVParser._
+
+  def parser: Parser[ApplicationInterchangeProfile] =
+    parseEMVBySpec(ApplicationInterchangeProfile, parseB(_))
 
 }

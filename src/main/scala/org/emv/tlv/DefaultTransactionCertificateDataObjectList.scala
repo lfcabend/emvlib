@@ -1,7 +1,8 @@
 package org.emv.tlv
 
 import org.emv.tlv.EMVTLV.EMVDOLSpec
-import org.tlv.TLV.BerTag
+import org.lau.tlv.ber._
+import scodec.bits._
 
 /**
   * Created by lau on 11/7/16.
@@ -15,7 +16,7 @@ case class DefaultTransactionCertificateDataObjectList (val list: List[(BerTag, 
 
 object DefaultTransactionCertificateDataObjectList extends EMVDOLSpec[DefaultTransactionCertificateDataObjectList] {
 
-  val tag: BerTag = "DFFF02"
+  val tag: BerTag =  berTag"DFFF02"
 
   override val maxLength: Int = 252
 

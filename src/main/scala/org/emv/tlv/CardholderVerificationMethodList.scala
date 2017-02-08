@@ -1,18 +1,18 @@
 package org.emv.tlv
 
 import org.emv.tlv.EMVTLV._
-import org.tlv.HexUtils
-import org.tlv.TLV.BerTag
-import org.tlv.HexUtils._
+import org.lau.tlv.ber._
+import scodec.bits._
 
 /**
   * Created by lau on 6/23/16.
   */
-case class CardholderVerificationMethodList(amountX: Seq[Byte],
-                                            amountY: Seq[Byte],
+case class CardholderVerificationMethodList(amountX: ByteVector,
+                                            amountY: ByteVector,
                                             rules: List[CVMRule]) extends EMVTLVLeaf {
 
-  override val value: Seq[Byte] = amountX ++ amountY ++ rules.map(_.value).flatten
+  override val value: ByteVector = amountX ++ amountY ++
+    rules.foldRight[ByteVector](ByteVector.empty)((x, y) => x.value ++ y)
 
   override val tag: BerTag = CardholderVerificationMethodList.tag
 
@@ -27,21 +27,23 @@ case class CardholderVerificationMethodList(amountX: Seq[Byte],
 
 case class CVMRule(applySucceedingRule: Boolean, methodCode: CVMMethodT, condition: CVMConditionT) {
 
-  def appleSucceedingByteValue =  if(applySucceedingRule) 0x40.toByte else 0x00.toByte
+  def appleSucceedingByteValue = if (applySucceedingRule) 0x40.toByte else 0x00.toByte
 
-  def value: Seq[Byte] = (methodCode.value | appleSucceedingByteValue).toByte :: condition.value :: Nil
+  def value: ByteVector = ByteVector((methodCode.value | appleSucceedingByteValue).toByte :: condition.value :: Nil)
 
   override def toString: String =
     s"""\tRule: ${value.toHex}
-       | ${if (applySucceedingRule) "\t\tApply succeeding CV Rule if this CVM is unsuccessful"
-           else "\t\tFail cardholder verification if this CVM is unsuccessful"}
-       | \t\tMethod   : ${methodCode.toString}
-       | \t\tCondition: ${condition.toString}
+        | ${
+      if (applySucceedingRule) "\t\tApply succeeding CV Rule if this CVM is unsuccessful"
+      else "\t\tFail cardholder verification if this CVM is unsuccessful"
+    }
+        | \t\tMethod   : ${methodCode.toString}
+        | \t\tCondition: ${condition.toString}
      """.stripMargin
 
 }
 
-trait CVMMethodT  {
+trait CVMMethodT {
 
   val value: Byte
 
@@ -113,7 +115,7 @@ object NoCVMRequired extends CVMMethodT {
 
 case class RFUMethod(value: Byte) extends CVMMethodT {
 
-  override def toString: String = s"RFU: ${HexUtils.toHex(List(value))}"
+  override def toString: String = s"RFU: ${ByteVector(value).toHex}"
 
 }
 
@@ -204,20 +206,67 @@ object ApplicationCurrencyAndOverY extends CVMConditionT {
 
 case class RFUCondition(value: Byte) extends CVMConditionT {
 
-  override def toString: String = s"RFU: ${HexUtils.toHex(List(value))}"
+  override def toString: String = s"RFU: ${ByteVector(value).toHex}"
 
 }
 
-object CardholderVerificationMethodList extends EMVBinaryWithVarLengthSpec[(Seq[Byte], Seq[Byte], List[CVMRule]),
+object CardholderVerificationMethodList extends EMVBinaryWithVarLengthSpec[(ByteVector, ByteVector, List[CVMRule]),
   CardholderVerificationMethodList] {
 
-  override val tag: BerTag = "8E"
+  override val tag: BerTag = berTag"8E"
 
   override val maxLength: Int = 252
 
   override val minLength: Int = 10
 
-  override def apply(v: (Seq[Byte], Seq[Byte], List[CVMRule])): CardholderVerificationMethodList =
+  override def apply(v: (ByteVector, ByteVector, List[CVMRule])): CardholderVerificationMethodList =
     new CardholderVerificationMethodList(v._1, v._2, v._3)
+
+  import fastparse.byte.all._
+  import org.emv.tlv.EMVTLV.EMVTLVParser._
+  import org.lau.tlv.ber.BerTLVParser._
+
+  def parser: Parser[CardholderVerificationMethodList] =
+    parseEMVBySpec(CardholderVerificationMethodList, parseCardholderVerificationMethodListValue(_))
+
+  def parseCardholderVerificationMethodListValue(length: Int): Parser[(ByteVector, ByteVector, List[CVMRule])] = for {
+    x <- AnyByte.!.rep(exactly = 4).!
+    y <- AnyByte.!.rep(exactly = 4).!
+    rules <- repParsingForXByte(parseCVMRule, length - 8)
+  } yield (x, y, rules)
+
+  def parseCVMRule: Parser[CVMRule] = for {
+    m <- parseCVMMethodAndFail
+    c <- parseCVMCondition
+  } yield (CVMRule(m._1, m._2, c))
+
+  def parseCVMMethodAndFail: Parser[(Boolean, CVMMethodT)] = AnyByte.!.map (x => {
+    val applySucceedingRule = (x.toByte() & 0x40.toByte) == 0x40.toByte
+    (x.toByte()  & 0xBF) match {
+      case FailCVM.value => (applySucceedingRule, FailCVM)
+      case PlainTextPinICC.value => (applySucceedingRule, PlainTextPinICC)
+      case EncipheredPINOnline.value => (applySucceedingRule, EncipheredPINOnline)
+      case PlainTextPinICCAndSignature.value => (applySucceedingRule, PlainTextPinICCAndSignature)
+      case EncipheredPINICC.value => (applySucceedingRule, EncipheredPINICC)
+      case EncipheredPINICCAndSignature.value => (applySucceedingRule, EncipheredPINICCAndSignature)
+      case Signature.value => (applySucceedingRule, Signature)
+      case NoCVMRequired.value => (applySucceedingRule, NoCVMRequired)
+      case default => (applySucceedingRule, RFUMethod(x.toByte()))
+    }
+  })
+
+  def parseCVMCondition: Parser[CVMConditionT] = P(AnyElem.!.map(x => x.toByte() match {
+    case Always.value => Always
+    case UnattendedCash.value => UnattendedCash
+    case NotUnattendedManualAndNotPurchaseWithCashback.value => NotUnattendedManualAndNotPurchaseWithCashback
+    case TerminalSupportsCVM.value => TerminalSupportsCVM
+    case ManualCash.value => ManualCash
+    case PurchaseWithCashback.value => PurchaseWithCashback
+    case ApplicationCurrencyAndUnderX.value => ApplicationCurrencyAndUnderX
+    case ApplicationCurrencyAndOverX.value => ApplicationCurrencyAndOverX
+    case ApplicationCurrencyAndUnderY.value => ApplicationCurrencyAndUnderY
+    case ApplicationCurrencyAndOverY.value => ApplicationCurrencyAndOverY
+    case x@default => RFUCondition(x)
+  }))
 
 }

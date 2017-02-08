@@ -1,7 +1,8 @@
 package org.emv.tlv
 
 import org.emv.tlv.EMVTLV.{EMVBinaryWithVarLengthSpec, EMVTLVLeaf, LeafToStringHelper}
-import org.tlv.TLV.{BerTag, BerTLVLeafT}
+import org.lau.tlv.ber._
+import scodec.bits._
 
 /**
   * Created by lau on 6/4/16.
@@ -9,7 +10,7 @@ import org.tlv.TLV.{BerTag, BerTLVLeafT}
 case class ApplicationFileLocator(val entries: List[AFLEntry])
   extends EMVTLVLeaf {
 
-  val value: Seq[Byte] = entries.foldRight(Nil: Seq[Byte])(_.value ++ _)
+  val value: ByteVector = entries.foldRight[ByteVector](ByteVector.empty)((x, y) => x.value ++ y)
 
   override val tag: BerTag = ApplicationFileLocator.tag
 
@@ -18,6 +19,11 @@ case class ApplicationFileLocator(val entries: List[AFLEntry])
     s"${super.toString}\n" + entries.map(x => s"${x.toString}").mkString("\n")
 
   }
+
+  /**
+    * tuple of sfi, recordNumber
+    */
+  val allRecords: List[(Byte, Byte)] = entries.flatMap(x => x.allRecords)
 
 }
 
@@ -38,12 +44,15 @@ case class AFLEntry(b1: Byte, b2: Byte, b3: Byte, b4: Byte) {
 
   def nrODARecords: Int = b4
 
-  def value: Seq[Byte] = b1 :: b2 :: b3 :: b4 :: Nil
+  def allRecords: List[(Byte, Byte)]  = Range(firstRecord, lastRecord + 1).map(x => (sfi.toByte, x.toByte)).toList
+
+  def value: ByteVector = ByteVector(b1 :: b2 :: b3 :: b4 :: Nil)
+
 }
 
 object ApplicationFileLocator extends EMVBinaryWithVarLengthSpec[List[AFLEntry], ApplicationFileLocator] {
 
-  val tag: BerTag = "94"
+  val tag: BerTag = berTag"94"
 
   val length: Int = 252
 
@@ -51,11 +60,18 @@ object ApplicationFileLocator extends EMVBinaryWithVarLengthSpec[List[AFLEntry],
 
   override val minLength: Int = 0
 
-//  override def parseEMVTLVValue(length: Int): ApplicationFileLocator.Parser[List[AFLEntry]] = parseAFLEntries(length)
+  import fastparse.byte.all._
+  import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-//  def parseAFLEntries(l: Int): Parser[List[AFLEntry]] =
-//    parseB(l).map(x => {
-//      val l: List[Seq[Byte]] = x.grouped(4).toList
-//      l.map(y => AFLEntry(y(0), y(1), y(2), y(3)))
-//    })
+  def parser: Parser[ApplicationFileLocator] =
+    parseEMVBySpec(ApplicationFileLocator, parseAFLEntries(_))
+
+
+  def parseAFLEntries(l: Int): Parser[List[AFLEntry]] =
+    parseB(l).map(x => {
+      val l: List[ByteVector] = x.grouped(4).toList
+      l.map(y => AFLEntry(y(0), y(1), y(2), y(3)))
+    })
+
+
 }

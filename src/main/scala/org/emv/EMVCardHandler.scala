@@ -1,11 +1,15 @@
 package org.emv
 
-import javax.smartcardio.Card
-
-import org.emv.tlv.EMVTLV.EMVParser
+import org.emv.commands.{GPOCommand, GPOResponse, ReadRecordCommand, ReadRecordResponse}
+import org.emv.tlv.{ApplicationFileLocator, ProcessingOptionsDataObjectList}
 import org.iso7816.APDU.{APDUCommand, APDUCommandResponse}
 import org.iso7816._
+import org.lau.tlv.ber._
+import scodec.bits._
+import fastparse.byte.all._
 
+import scalaz._
+import Scalaz._
 import scalaz.concurrent.Task
 
 /**
@@ -13,28 +17,56 @@ import scalaz.concurrent.Task
   */
 object EMVCardHandler {
 
-  def performSelect(card: Card, aid: AID): Task[SelectTransmission] = {
+  def performSelect(context: ConnectionContext, card: CardTrait, aid: AID): Task[SelectTransmission] = {
     val selectCommand = org.iso7816.Select.selectDFFirstOccurenceWithFCIResponse(aid)
     for {
-      response <- transmitEMVCommand(card, selectCommand, EMVParser.parseSelectResponse)
+      response <- transmitEMVCommand(context, card, selectCommand, SelectResponse.parser)
     } yield (new SelectTransmission(Some(selectCommand), Some(response)))
   }
 
-  def transmitEMVCommand[T <: APDUCommandResponse](card: Card, apduCommand: APDUCommand,
-                                                   parser: EMVParser.Parser[T]): Task[T] = for {
-    response <- PCSCCard.transmit(card, apduCommand.serialize)
-  } yield(tryToParseApduResponse(response, parser))
+  def performGPO(context: ConnectionContext, card: CardTrait, pdol: Option[ProcessingOptionsDataObjectList],
+                 tlvList: List[BerTLV]): Task[GPOTransmission] = {
+    val gpoCommand = pdol match {
+      case Some(x) => GPOCommand(x, tlvList)
+      case None => GPOCommand()
+    }
+    for {
+      response <- transmitEMVCommand(context, card, gpoCommand, GPOResponse.parser)
+    } yield (new GPOTransmission(Some(gpoCommand), Some(response)))
+  }
 
-  def tryToParseApduResponse[T](in: Seq[Byte], parser: EMVParser.Parser[T]): T = {
-    EMVParser.parse(parser, in) match {
-      case EMVParser.Success(result, _) => result
-      case EMVParser.NoSuccess(msg, _) => throw new ResponsParseError(msg)
+  def readRecords(context: ConnectionContext, card: CardTrait, afl: ApplicationFileLocator): Task[Seq[ReadRecordTransmission]] =
+    afl.allRecords.map({
+      case (sfi, record) => readRecord(context, card, sfi, record)
+    }).sequence[Task, ReadRecordTransmission]
+
+  def readRecord(context: ConnectionContext, card: CardTrait,
+                 sfi: Byte, record: Byte): Task[ReadRecordTransmission] = {
+    val readRecordCommand = ReadRecordCommand(record, sfi)
+    for {
+      response <- transmitEMVCommand(context, card, readRecordCommand, ReadRecordResponse.parser)
+    } yield (new ReadRecordTransmission(Some(readRecordCommand), Some(response)))
+  }
+
+  def transmitEMVCommand[T <: APDUCommandResponse](context: ConnectionContext, card: CardTrait,
+                                                   apduCommand: APDUCommand,
+                                                   parser: Parser[T]): Task[T] = for {
+    response <- card.transmit(context, apduCommand.serialize)
+  } yield (tryToParseApduResponse(response, parser))
+
+
+  def tryToParseApduResponse[T](in: ByteVector, parser: Parser[T]): T = {
+    parser.parse(in) match {
+      case Parsed.Success(result, _) => result
+      case Parsed.Failure(lp, index, r3) =>
+        throw new ResponsParseError(s"${lp}\n${index}\n${r3}")
     }
   }
 
 }
 
+case class ResponsParseError(detailMessage: String) extends Exception {
 
+  override def toString: String = detailMessage
 
-
-class ResponsParseError(msg: String) extends Exception
+}

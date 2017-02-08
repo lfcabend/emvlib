@@ -1,10 +1,11 @@
 package org.emv.tlv
 
-import org.tlv.HexUtils
+import org.lau.tlv.ber._
+import scodec.bits._
 
 trait Textable {
 
-  val value: Seq[Byte]
+  val value: ByteVector
 
   def text = TextHelper.text(value)
 
@@ -12,7 +13,7 @@ trait Textable {
 
 trait NumberTextable {
 
-  val value: Seq[Byte]
+  val value: ByteVector
 
   def text = TextHelper.nToText(value)
 
@@ -21,7 +22,7 @@ trait NumberTextable {
 
 trait CompactNumberTextable {
 
-  val value: Seq[Byte]
+  val value: ByteVector
 
   def text = TextHelper.cnToText(value)
 
@@ -32,10 +33,10 @@ trait CompactNumberTextable {
   */
 object TextHelper {
 
-  def text(value: Seq[Byte]) = new String(value.toArray, "ASCII")
+  def text(value: ByteVector) = new String(value.toArray, "ASCII")
 
-  def nToText(value: Seq[Byte]) = HexUtils.toHex(value)
+  def nToText(value: ByteVector) = value.toHex
 
-  def cnToText(value: Seq[Byte]) = HexUtils.toHex(value).replaceAll("F", "")
+  def cnToText(value: ByteVector) = value.toHex.replaceAll("F", "")
 
 }
