@@ -90,44 +90,44 @@ class EMVCardTest extends FlatSpec with Matchers with MockFactory {
   }
 
 
-    it should " be able to process a GPO Command with a PDOL" in {
+  it should " be able to process a GPO Command with a PDOL" in {
 
-      val context: ConnectionContext = mock[ConnectionContext]
-      val card: CardTrait = mock[CardTrait]
+    val context: ConnectionContext = mock[ConnectionContext]
+    val card: CardTrait = mock[CardTrait]
 
-      val pdol = ProcessingOptionsDataObjectList((IssuerCountryCode.tag, 2) :: Nil)
+    val pdol = ProcessingOptionsDataObjectList((IssuerCountryCode.tag, 2) :: Nil)
 
-      (card.transmit _).expects(*, argThat[ByteVector](_ == hex"80a80000048302052800")).
-        returns(Task(hex"800E7D004001010048010301500103009000"))
+    (card.transmit _).expects(*, argThat[ByteVector](_ == hex"80a80000048302052800")).
+      returns(Task(hex"800E7D004001010048010301500103009000"))
 
-      val tagList = List(IssuerCountryCode(CountryCode.NL))
+    val tagList = List(IssuerCountryCode(CountryCode.NL))
 
-      val gpoTask: Task[GPOTransmission] = performGPO(context, card, Some(pdol), tagList)
+    val gpoTask: Task[GPOTransmission] = performGPO(context, card, Some(pdol), tagList)
 
-      val expectedGPOCommand = GPOCommand(pdol, tagList)
-      val expectedResponse = GPOResponseFormat1(Some(
-        GPOResponseMessageTemplateFormat1(ApplicationInterchangeProfile(hex"7d00"),
-          ApplicationFileLocator(List(AFLEntry(0x40.toByte, 0x01.toByte, 0x01.toByte, 0x00.toByte),
-            AFLEntry(0x48.toByte, 0x01.toByte, 0x03.toByte, 0x01.toByte),
-            AFLEntry(0x50.toByte, 0x01.toByte, 0x03.toByte, 0x00.toByte)
-          ))
-        )),
-        NormalProcessingNoFurtherQualification)
+    val expectedGPOCommand = GPOCommand(pdol, tagList)
+    val expectedResponse = GPOResponseFormat1(Some(
+      GPOResponseMessageTemplateFormat1(ApplicationInterchangeProfile(hex"7d00"),
+        ApplicationFileLocator(List(AFLEntry(0x40.toByte, 0x01.toByte, 0x01.toByte, 0x00.toByte),
+          AFLEntry(0x48.toByte, 0x01.toByte, 0x03.toByte, 0x01.toByte),
+          AFLEntry(0x50.toByte, 0x01.toByte, 0x03.toByte, 0x00.toByte)
+        ))
+      )),
+      NormalProcessingNoFurtherQualification)
 
-      gpoTask.unsafePerformSyncAttempt match {
-        case \/-(GPOTransmission(Some(a), Some(b))) => {
-          a should be(expectedGPOCommand)
-          b should be(expectedResponse)
-        }
-        case -\/(e) => {
-          fail(e.toString)
-        }
-        case _ => fail("result did not match expected value")
+    gpoTask.unsafePerformSyncAttempt match {
+      case \/-(GPOTransmission(Some(a), Some(b))) => {
+        a should be(expectedGPOCommand)
+        b should be(expectedResponse)
       }
+      case -\/(e) => {
+        fail(e.toString)
+      }
+      case _ => fail("result did not match expected value")
     }
+  }
 
 
-  it should "be able to process a Read Record Command"  in  {
+  it should "be able to process a Read Record Command" in {
     val context: ConnectionContext = mock[ConnectionContext]
     val card: CardTrait = mock[CardTrait]
 
@@ -158,29 +158,35 @@ class EMVCardTest extends FlatSpec with Matchers with MockFactory {
   }
 
 
-  it should "be able to process a Read Records Command"  in  {
+  it should "be able to process a Read Records Command" in {
     val context: ConnectionContext = mock[ConnectionContext]
     val card: CardTrait = mock[CardTrait]
 
 
     (card.transmit _).expects(*, argThat[ByteVector](_ == hex"00B2010C00")).
       returns(Task(hex"70009000"))
+    (card.transmit _).expects(*, argThat[ByteVector](_ == hex"00B2020C00")).
+      returns(Task(hex"70009000"))
 
     val sfi = 0x01.toByte
     val record = 0x01.toByte
 
-    val afl = ApplicationFileLocator(List(AFLEntry(0x0C, 0x01, 0x01, 0x00)))
+    val afl = ApplicationFileLocator(List(AFLEntry(0x0C, 0x01, 0x02, 0x00)))
 
     val readRecordTrans: Task[Seq[ReadRecordTransmission]] = readRecords(context, card, afl)
 
     val expectedReadRecord = ReadRecordCommand(record, sfi)
+    val expectedReadRecord2 = ReadRecordCommand((record + 1).toByte, sfi)
     val expectedResponse = ReadRecordResponse(Some(READRECORDResponseMessageTemplate(Nil)),
       NormalProcessingNoFurtherQualification)
 
     readRecordTrans.unsafePerformSyncAttempt match {
-      case \/-(List(ReadRecordTransmission(Some(a), Some(b)))) => {
+      case \/-(List(ReadRecordTransmission(Some(a), Some(b)),
+          ReadRecordTransmission(Some(c), Some(d)))) => {
         a should be(expectedReadRecord)
         b should be(expectedResponse)
+        c should be(expectedReadRecord2)
+        d should be(expectedResponse)
       }
       case -\/(e) => {
         fail(e.toString)
