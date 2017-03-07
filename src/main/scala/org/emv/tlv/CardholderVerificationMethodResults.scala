@@ -1,6 +1,6 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.{EMVDefaultBinaryWithLengthSpec, EMVTLVLeaf}
+import org.emv.tlv.EMVTLV._
 import org.lau.tlv.ber._
 import scodec.bits._
 
@@ -9,19 +9,18 @@ import scodec.bits._
   */
 case class CardholderVerificationMethodResults(override val value: ByteVector) extends EMVTLVLeaf {
 
-  override val tag: BerTag = CardholderVerificationMethodResults.tag
+  override val tag = CardholderVerificationMethodResults.tag
 
 }
 
 object CardholderVerificationMethodResults extends EMVDefaultBinaryWithLengthSpec[CardholderVerificationMethodResults] {
 
-  override val tag: BerTag = berTag"9F34"
+  override val tag = berTag"9F34"
 
-  override val length: Int = 3
+  override val length = 3
 
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser: Parser[CardholderVerificationMethodResults] =
-    parseEMVBySpec(CardholderVerificationMethodResults, parseB(_))
+  def parser = parseEMVBySpec(CardholderVerificationMethodResults, parseB(_))
 }

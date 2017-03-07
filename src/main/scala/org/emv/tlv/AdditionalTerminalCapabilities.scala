@@ -10,9 +10,9 @@ import scodec.bits._
   */
 trait AdditionalTerminalCapabilitiesT extends EMVTLVLeaf {
 
-  override val tag: BerTag = AdditionalTerminalCapabilities.tag
+  override val tag = AdditionalTerminalCapabilities.tag
 
-  override def toString: String = {
+  override def toString = {
     s"""${super.toString}
        |\tByte 1 bit 8 cash               : $isCash
        |\t       bit 7 goods              : $isGoods
@@ -279,7 +279,7 @@ case class AdditionalTerminalCapabilities(override val value: ByteVector) extend
 
 trait AdditionalTerminalCapabilitiesSpec extends EMVDefaultBinaryWithLengthSpec[AdditionalTerminalCapabilities] {
 
-  val tag: BerTag = berTag"9F40"
+  val tag = berTag"9F40"
 
   val length = 5
 
@@ -292,7 +292,6 @@ object AdditionalTerminalCapabilities extends AdditionalTerminalCapabilitiesSpec
   import fastparse.byte.all.Parser
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser: Parser[AdditionalTerminalCapabilities] =
-    parseEMVBySpec(AdditionalTerminalCapabilities, parseB(_))
+  def parser = parseEMVBySpec(AdditionalTerminalCapabilities, parseB(_))
 
 }

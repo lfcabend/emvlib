@@ -9,20 +9,23 @@ import scodec.bits._
   */
 case class CardholderVerificationMethodList(amountX: ByteVector,
                                             amountY: ByteVector,
-                                            rules: List[CVMRule]) extends EMVTLVLeaf {
+                                            rules: List[CVMRule])
+  extends EMVTLVLeaf with TemplateTag {
 
-  override val value: ByteVector = amountX ++ amountY ++
+  override val value = amountX ++ amountY ++
     rules.foldRight[ByteVector](ByteVector.empty)((x, y) => x.value ++ y)
 
-  override val tag: BerTag = CardholderVerificationMethodList.tag
+  override val tag = CardholderVerificationMethodList.tag
 
-  override def toString: String =
+  override def toString =
     s"""${super.toString}
        |\tAmount X: ${amountX.toHex}
        |\tAmount Y: ${amountY.toHex}
        |${rules.map(_.toString).mkString("\n")}
      """.stripMargin
 
+  override val templates = Set(ResponseMessageTemplateFormat2.tag,
+    READRECORDResponseMessageTemplate.tag)
 }
 
 case class CVMRule(applySucceedingRule: Boolean, methodCode: CVMMethodT, condition: CVMConditionT) {
@@ -213,29 +216,28 @@ case class RFUCondition(value: Byte) extends CVMConditionT {
 object CardholderVerificationMethodList extends EMVBinaryWithVarLengthSpec[(ByteVector, ByteVector, List[CVMRule]),
   CardholderVerificationMethodList] {
 
-  override val tag: BerTag = berTag"8E"
+  override val tag = berTag"8E"
 
-  override val maxLength: Int = 252
+  override val maxLength = 252
 
-  override val minLength: Int = 10
+  override val minLength = 10
 
-  override def apply(v: (ByteVector, ByteVector, List[CVMRule])): CardholderVerificationMethodList =
+  override def apply(v: (ByteVector, ByteVector, List[CVMRule]))=
     new CardholderVerificationMethodList(v._1, v._2, v._3)
 
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
   import org.lau.tlv.ber.BerTLVParser._
 
-  def parser: Parser[CardholderVerificationMethodList] =
-    parseEMVBySpec(CardholderVerificationMethodList, parseCardholderVerificationMethodListValue(_))
+  def parser = parseEMVBySpec(CardholderVerificationMethodList, parseCardholderVerificationMethodListValue(_))
 
-  def parseCardholderVerificationMethodListValue(length: Int): Parser[(ByteVector, ByteVector, List[CVMRule])] = for {
+  def parseCardholderVerificationMethodListValue(length: Int) = for {
     x <- AnyByte.!.rep(exactly = 4).!
     y <- AnyByte.!.rep(exactly = 4).!
     rules <- repParsingForXByte(parseCVMRule, length - 8)
   } yield (x, y, rules)
 
-  def parseCVMRule: Parser[CVMRule] = for {
+  def parseCVMRule = for {
     m <- parseCVMMethodAndFail
     c <- parseCVMCondition
   } yield (CVMRule(m._1, m._2, c))

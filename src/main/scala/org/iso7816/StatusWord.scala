@@ -174,7 +174,7 @@ object StatusWord {
     parseStatusWordByObject(WarningNonVolatileUnchangedEndOfFile) | parseStatusWordByObject(WarningNonVolatileUnchangedDeactivated) |
     parseStatusWordByObject(WarningNonVolatileUnchangedFormatError) | parseStatusWordByObject(WarningNonVolatileUnchangedTerminatedState) |
     parseStatusWordByObject(WarningNonVolatileUnchangedNoInput) | parseStatusWordByObject(WarningNonVolatileUnchangedPartCurrupted) |
-    parseStatusWordByObject(WarningNonVolatileUnchangedNoFurtherInfo) //| parseAnyStatusWork
+    parseStatusWordByObject(WarningNonVolatileUnchangedNoFurtherInfo) | parseAnyStatusWork
 
   def parseWrongLeField: Parser[WrongLE] = for {
     x1 <- AnyElem.!

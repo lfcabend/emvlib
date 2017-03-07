@@ -43,7 +43,7 @@ object APDU {
 
   }
 
-  abstract class APDUCommandResponse(responseBody: Option[ByteVector], statusWord: StatusWordT) {
+  abstract class APDUCommandResponse(val responseBody: Option[ByteVector], val statusWord: StatusWordT) {
 
     def serialize: ByteVector = {
       responseBody match {

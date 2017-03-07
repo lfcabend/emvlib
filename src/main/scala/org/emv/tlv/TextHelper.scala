@@ -9,6 +9,11 @@ trait Textable {
 
   def text = TextHelper.text(value)
 
+  override def toString: String =
+    s"""${super.toString}
+       |\t${text}
+     """.stripMargin
+
 }
 
 trait NumberTextable {

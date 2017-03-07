@@ -1,7 +1,7 @@
 package org.emv
 
-import org.emv.commands.{GPOCommand, GPOResponse, ReadRecordCommand, ReadRecordResponse}
-import org.emv.tlv.{ApplicationFileLocator, ProcessingOptionsDataObjectList}
+import org.emv.commands._
+import org.emv.tlv.{ApplicationFileLocator, CardRiskManagementDataObjectList1, CryptogramInformationData, ProcessingOptionsDataObjectList}
 import org.iso7816.APDU.{APDUCommand, APDUCommandResponse}
 import org.iso7816._
 import org.lau.tlv.ber._
@@ -35,10 +35,29 @@ object EMVCardHandler {
     } yield (new GPOTransmission(Some(gpoCommand), Some(response)))
   }
 
-  def readRecords(context: ConnectionContext, card: CardTrait, afl: ApplicationFileLocator): Task[Seq[ReadRecordTransmission]] =
-    afl.allRecords.map({
-      case (sfi, record) => readRecord(context, card, sfi, record)
-    }).sequence[Task, ReadRecordTransmission]
+  def readRecords(context: ConnectionContext, card: CardTrait, afl: ApplicationFileLocator): Task[List[ReadRecordTransmission]] = {
+
+    def readRecordsRec(context: ConnectionContext, card: CardTrait, aflEnrties: List[(Byte, Byte)],
+                          readRecordTransmissions: List[ReadRecordTransmission]): Task[List[ReadRecordTransmission]] =
+      aflEnrties match {
+        //take the first and read it
+        case x::cs => readRecord(context, card, x._1, x._2).
+          flatMap({
+            //if successful then read more
+            case r1@ReadRecordTransmission(rrc, Some(ReadRecordResponse(_, NormalProcessingNoFurtherQualification))) => {
+              readRecordsRec(context, card, cs, readRecordTransmissions ++ List(r1))
+            }
+            //if not then return was was read with the last one
+            case r2@_ => Task(readRecordTransmissions ++ List(r2))
+          })
+        //no records to read anymore return wat we read
+        case Nil => Task(readRecordTransmissions)
+      }
+
+    readRecordsRec(context, card, afl.allRecords, List())
+  }
+
+
 
   def readRecord(context: ConnectionContext, card: CardTrait,
                  sfi: Byte, record: Byte): Task[ReadRecordTransmission] = {
@@ -48,18 +67,27 @@ object EMVCardHandler {
     } yield (new ReadRecordTransmission(Some(readRecordCommand), Some(response)))
   }
 
+  def generateAC(context: ConnectionContext, card: CardTrait, cid: CryptogramInformationData,
+                 cdol: CardRiskManagementDataObjectList1, tlvList: List[BerTLV],
+                 cda: Boolean = false): Task[GenerateACTransmission] = {
+    val generateACCommand = GenerateACCommand(cid, cdol, tlvList, cda)
+    for {
+      response <- transmitEMVCommand(context, card, generateACCommand, GenerateACResponse.parser)
+    } yield (new GenerateACTransmission(Some(generateACCommand), Some(response)))
+  }
+
   def transmitEMVCommand[T <: APDUCommandResponse](context: ConnectionContext, card: CardTrait,
                                                    apduCommand: APDUCommand,
                                                    parser: Parser[T]): Task[T] = for {
     response <- card.transmit(context, apduCommand.serialize)
-  } yield (tryToParseApduResponse(response, parser))
+  } yield tryToParseApduResponse(response, parser)
 
 
   def tryToParseApduResponse[T](in: ByteVector, parser: Parser[T]): T = {
     parser.parse(in) match {
       case Parsed.Success(result, _) => result
       case Parsed.Failure(lp, index, r3) =>
-        throw new ResponsParseError(s"${lp}\n${index}\n${r3}")
+        throw new ResponsParseError(s"parser ERRor: ${lp}\n${index}\n${r3}")
     }
   }
 

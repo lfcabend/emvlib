@@ -10,21 +10,21 @@ import scodec.bits._
 case class ApplicationPriorityIndicator(override val value: ByteVector)
   extends EMVTLVLeaf with BinaryNumber with TemplateTag {
 
-  override val tag: BerTag = ApplicationPriorityIndicator.tag
+  override val tag = ApplicationPriorityIndicator.tag
 
-  override val templates: Set[BerTag] = Set(ApplicationTemplate.tag)
+  override val templates = Set(ApplicationTemplate.tag,
+    FileControlInformationProprietaryTemplate.tag)
 }
 
 object ApplicationPriorityIndicator extends EMVDefaultBinaryWithLengthSpec[ApplicationPriorityIndicator] {
 
-  val tag: BerTag = berTag"87"
+  val tag = berTag"87"
 
-  val length: Int = 1
+  val length = 1
 
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser: Parser[ApplicationPriorityIndicator] =
-    parseEMVBySpec(ApplicationPriorityIndicator, parseB(_))
+  def parser = parseEMVBySpec(ApplicationPriorityIndicator, parseB(_))
 
 }

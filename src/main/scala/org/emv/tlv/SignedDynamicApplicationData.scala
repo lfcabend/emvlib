@@ -2,28 +2,29 @@ package org.emv.tlv
 
 import fastparse.byte.all._
 import org.emv.tlv.EMVTLV.EMVTLVParser._
-import org.emv.tlv.EMVTLV.{EMVDefaultBinaryWithVarLengthSpec, EMVTLVLeaf}
+import org.emv.tlv.EMVTLV._
 import org.lau.tlv.ber._
 import scodec.bits._
 
 /**
   * Created by lau on 11/28/16.
   */
-case class SignedDynamicApplicationData(override val value: ByteVector) extends EMVTLVLeaf {
+case class SignedDynamicApplicationData(override val value: ByteVector)
+  extends EMVTLVLeaf with TemplateTag {
 
-  override val tag: BerTag = SignedDynamicApplicationData.tag
+  override val tag = SignedDynamicApplicationData.tag
 
+  override val templates = Set(ResponseMessageTemplateFormat2.tag)
 }
 
 object SignedDynamicApplicationData extends EMVDefaultBinaryWithVarLengthSpec[SignedDynamicApplicationData] {
 
-  val tag: BerTag = berTag"9F4B"
+  val tag = berTag"9F4B"
 
-  override val maxLength: Int = 255
+  override val maxLength = 255
 
-  override val minLength: Int = 0
+  override val minLength = 0
 
-  def parser: Parser[SignedDynamicApplicationData] =
-    parseEMVBySpec(SignedDynamicApplicationData, parseB(_))
+  def parser = parseEMVBySpec(SignedDynamicApplicationData, parseB(_))
 
 }

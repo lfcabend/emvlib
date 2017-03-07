@@ -1,24 +1,22 @@
 package org.emv
 
-import org.emv.tlv.{ApplicationIdentifier, ApplicationInterchangeProfile}
 import org.iso7816.APDU.{APDUCommand, APDUCommandResponse}
-import org.iso7816.{AID, Select, SelectResponse}
-import scodec.bits.ByteVector
-import scodec.bits._
+import org.iso7816.{AID, NormalProcessingNoFurtherQualification, Select, SelectResponse}
 import org.lau.tlv.ber._
 import com.softwaremill.quicklens._
-import org.emv.commands.{GPOCommand, GPOResponse, ReadRecordCommand, ReadRecordResponse}
-
+import org.emv.commands._
 import scalaz._
-import scala.collection.immutable.List
 
 /**
   * Created by lau on 7/6/16.
   */
 case class TerminalState(val config: TerminalConfig,
-                         val transientData: TLVParameters,
+                         val transientData: TerminalTransientData,
                          val transmissions: TransactionTransmissions) {
 
+  def isCandidateListNotEmpty() = !transientData.candidateList.isEmpty
+
+  def withAIDCandidateList(candidateList: List[AID]) = this.modify(_.transientData.candidateList).setTo(candidateList)
 
   def withSelectApplication(selectApplication: SelectTransmission) = this.modify(_.transmissions.selectTransmission).
     setTo(Some(selectApplication))
@@ -27,20 +25,55 @@ case class TerminalState(val config: TerminalConfig,
   def withSelectPPSE(selectPPSE: SelectTransmission) = this.modify(_.transmissions.selectPPSETransmission).
     setTo(Some(selectPPSE))
 
+  def withGetProcessingOptions(gpoTransmission: GPOTransmission) = this.modify(_.transmissions.gpoTransmission).
+    setTo(Some(gpoTransmission))
+
+  def withReadRecordsTransmission(readRecordsTransmission: List[ReadRecordTransmission]) = this.modify(_.transmissions.readRecordsTransmission).
+    setTo(Some(readRecordsTransmission))
+
+  def addReadRecordsTransmission(readRecordTransmission: ReadRecordTransmission) = this.modify(_.transmissions.readRecordsTransmission).
+    using(x => x match {
+      case None => Some(List(readRecordTransmission))
+      case Some(y) => Some(y ::: List(readRecordTransmission))
+    })
+
   def supportedBrands() = config.brandParameters.map(_.aid).toSet
+
 
   def getSelectedAID(): Option[AID] =
     for {
-    st <- transmissions.selectTransmission
-    r <- st.command
-  } yield (r.aid)
+      st <- transmissions.selectTransmission
+      r <- st.command
+    } yield (r.aid)
 
   def terminalTLV(selectedBrand: AID): List[BerTLV] =
     config.generalConfig.tlv ++ config.getTlVForBrand(selectedBrand).getOrElse(Nil)
 
   def terminalTLV(): List[BerTLV] = getSelectedAID() match {
-      case Some(x) => terminalTLV(x)
-      case _       => config.generalConfig.tlv
+    case Some(x) => terminalTLV(x)
+    case _ => config.generalConfig.tlv
+  }
+
+  val isPPSESuccessful: Boolean = isResponseSuccessful(transmissions.selectPPSETransmission)
+
+  val isSelectionSuccessful: Boolean = isResponseSuccessful(transmissions.selectTransmission)
+
+  val isGPOSuccessful: Boolean = isResponseSuccessful(transmissions.gpoTransmission)
+
+  val isReadRecordsSuccessful: Boolean =
+    transmissions.readRecordsTransmission.map(_.map(
+      x => isResponseSuccessful(Some(x))
+    ).forall(identity)) match {
+      case Some(x) => x
+      case None => false
+    }
+
+  val isGenerateACSuccessful: Boolean = isResponseSuccessful(transmissions.generateACTransmission)
+
+  def isResponseSuccessful[C <: APDUCommand, CR <: APDUCommandResponse](cr: Option[Transmission[C, CR]]): Boolean =
+    cr.flatMap(_.response.map(_.statusWord == NormalProcessingNoFurtherQualification)) match {
+      case Some(x) => x
+      case None => false
     }
 
 }
@@ -71,9 +104,9 @@ case class ReadRecordTransmission(override val command: Option[ReadRecordCommand
                                   override val response: Option[ReadRecordResponse] = None)
   extends Transmission[ReadRecordCommand, ReadRecordResponse]
 
-case class GenerateACTransmission(override val command: Option[Select] = None,
-                                  override val response: Option[SelectResponse] = None)
-  extends Transmission[Select, SelectResponse]
+case class GenerateACTransmission(override val command: Option[GenerateACCommand] = None,
+                                  override val response: Option[GenerateACResponse] = None)
+  extends Transmission[GenerateACCommand, GenerateACResponse]
 
 
 case class TerminalConfig(val generalConfig: GeneralParameters, val brandParameters: List[BrandParameters] = Nil) {
@@ -95,12 +128,8 @@ case class TerminalConfig(val generalConfig: GeneralParameters, val brandParamet
   def filterBrandParametersByAID(brandParameters: BrandParameters, aid: AID): Boolean =
     brandParameters.aid == aid
 
-  //TODO this shit creates some compiler crash
-  //Error:scalac: Error while emitting TerminalState.scala
-//  key not found: value aid
-  //Warning:scalac: 	at scala.collection.MapLike.default(MapLike.scala:232)
-  def withTlvAddedToBrandParameters(aid: AID, value: BerTLV): TerminalConfig = ???
-//    this.modify(_.brandParameters.eachWhere(filterBrandParametersByAID(_, aid)).tlv).using(_ :+ value)
+  def withTlvAddedToBrandParameters(aid: AID, value: BerTLV): TerminalConfig =
+    this.modify(_.brandParameters.eachWhere(filterBrandParametersByAID(_, aid)).tlv).using(_ :+ value)
 
 }
 
@@ -109,6 +138,9 @@ trait TLVParameters {
   val tlv: List[BerTLV]
 
 }
+
+case class TerminalTransientData(val candidateList: List[AID] = Nil,
+                                 override val tlv: List[BerTLV] = Nil) extends TLVParameters
 
 case class GeneralParameters(override val tlv: List[BerTLV] = Nil) extends TLVParameters {
 

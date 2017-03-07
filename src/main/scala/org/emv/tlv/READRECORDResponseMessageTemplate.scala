@@ -1,6 +1,6 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.{EMVTLVType, Template, TemplateSpec, ValueDataType}
+import org.emv.tlv.EMVTLV._
 import org.lau.tlv.ber._
 import scodec.bits._
 
@@ -10,28 +10,23 @@ import scodec.bits._
 case class READRECORDResponseMessageTemplate(constructedValue: List[BerTLV])
   extends Template {
 
-  override val tag: BerTag = READRECORDResponseMessageTemplate.tag
-
-  override val templateTags: Set[BerTag] = READRECORDResponseMessageTemplate.templateTags
-
-  override def copyByConstructedValue(newConstructedValue: List[BerTLV]): BerTLVConsT =
+  override def copyByConstructedValue(newConstructedValue: List[BerTLV]) =
     copy(constructedValue = newConstructedValue)
+
+  override val tag: BerTag = READRECORDResponseMessageTemplate.tag
 }
 
 object READRECORDResponseMessageTemplate extends TemplateSpec[READRECORDResponseMessageTemplate] {
 
-  val tag: BerTag = berTag"70"
+  val tag = berTag"70"
 
-  val templateTags: Set[BerTag] = Set()
-
-  override val valueDataType: ValueDataType.Value = ValueDataType.B
-  override val maxLength: Int = 252
-  override val minLength: Int = 0
+  override val valueDataType = ValueDataType.B
+  override val maxLength  = 252
+  override val minLength = 0
 
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser: Parser[READRECORDResponseMessageTemplate] =
-    parseEMVBySpec(READRECORDResponseMessageTemplate, parseTemplateValue(READRECORDResponseMessageTemplate)(_))
+  def parser = parseEMVBySpec(READRECORDResponseMessageTemplate, parseTemplateValue(READRECORDResponseMessageTemplate)(_))
 
 }

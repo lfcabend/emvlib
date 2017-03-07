@@ -1,6 +1,6 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.{EMVDefaultAlphaNumericWithLengthSpec, EMVTLVLeafTextable}
+import org.emv.tlv.EMVTLV._
 import org.lau.tlv.ber._
 import scodec.bits._
 
@@ -10,25 +10,24 @@ import scodec.bits._
   */
 case class InterfaceDeviceSerialNumber(override val value: ByteVector) extends EMVTLVLeafTextable {
 
-  override val tag: BerTag = InterfaceDeviceSerialNumber.tag
+  override val tag = InterfaceDeviceSerialNumber.tag
 
 }
 
 object InterfaceDeviceSerialNumber extends EMVDefaultAlphaNumericWithLengthSpec[InterfaceDeviceSerialNumber] {
 
-  val tag: BerTag = berTag"9F1E"
+  val tag = berTag"9F1E"
 
-  override val max: Int = 8
+  override val max = 8
 
-  override val min: Int = 8
+  override val min = 8
 
-  override val length: Int = 8
+  override val length = 8
 
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser: Parser[InterfaceDeviceSerialNumber] =
-    parseEMVBySpec(InterfaceDeviceSerialNumber, parseB(_))
+  def parser = parseEMVBySpec(InterfaceDeviceSerialNumber, parseB(_))
 
 
 }

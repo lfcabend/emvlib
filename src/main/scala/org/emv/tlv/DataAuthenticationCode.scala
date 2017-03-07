@@ -10,20 +10,19 @@ import scodec.bits._
   */
 case class DataAuthenticationCode(override val value: ByteVector) extends EMVTLVLeaf {
 
-  override val tag: BerTag = DataAuthenticationCode.tag
+  override val tag = DataAuthenticationCode.tag
 
 }
 
 object DataAuthenticationCode extends EMVDefaultBinaryWithLengthSpec[DataAuthenticationCode] {
 
-  override val length: Int = 2
+  override val length = 2
 
-  override val tag: BerTag = berTag"9F45"
+  override val tag = berTag"9F45"
 
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parseDataAuthenticationCode: Parser[DataAuthenticationCode] =
-    parseEMVBySpec(DataAuthenticationCode, parseB(_))
+  def parser = parseEMVBySpec(DataAuthenticationCode, parseB(_))
 
 }

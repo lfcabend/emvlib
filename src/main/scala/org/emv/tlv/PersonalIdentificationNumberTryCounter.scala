@@ -12,18 +12,17 @@ import scodec.bits._
   */
 case class PersonalIdentificationNumberTryCounter(override val value: ByteVector) extends EMVTLVLeaf {
 
-  override val tag: BerTag = PersonalIdentificationNumberTryCounter.tag
+  override val tag = PersonalIdentificationNumberTryCounter.tag
 
 }
 
 object PersonalIdentificationNumberTryCounter extends EMVDefaultBinaryWithLengthSpec[PersonalIdentificationNumberTryCounter] {
 
-  val tag: BerTag = berTag"9F17"
+  val tag = berTag"9F17"
 
-  override val length: Int = 1
+  override val length = 1
 
-  def parser: Parser[PersonalIdentificationNumberTryCounter] =
-    parseEMVBySpec(PersonalIdentificationNumberTryCounter, parseB(_))
+  def parser = parseEMVBySpec(PersonalIdentificationNumberTryCounter, parseB(_))
 
 
 }

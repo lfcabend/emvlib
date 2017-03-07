@@ -11,7 +11,7 @@ case class AmountOtherBinary(override val value: ByteVector) extends EMVTLVLeaf 
 
   require(value.length == AmountOtherBinary.length)
 
-  override val tag: BerTag = AmountOtherBinary.tag
+  override val tag = AmountOtherBinary.tag
 
 }
 
@@ -19,13 +19,12 @@ object AmountOtherBinary extends EMVDefaultBinaryWithLengthSpec[AmountOtherBinar
 
   val length = 4
 
-  val tag: BerTag = berTag"9F04"
+  val tag = berTag"9F04"
 
   import fastparse.byte.all.Parser
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser: Parser[AmountOtherBinary] =
-    parseEMVBySpec(AmountOtherBinary, parseB(_))
+  def parser = parseEMVBySpec(AmountOtherBinary, parseB(_))
 
 }
 

@@ -9,21 +9,23 @@ import scodec.bits.ByteVector
 /**
   * Created by lau on 6/2/16.
   */
-case class ApplicationCurrencyCode(val currency: Currency) extends EMVTLVLeafWithCurrency {
+case class ApplicationCurrencyCode(val currency: Currency)
+  extends EMVTLVLeafWithCurrency with TemplateTag {
 
-  override val tag: BerTag = ApplicationCryptogram.tag
+  override val tag = ApplicationCurrencyCode.tag
 
+  override val templates = Set(ResponseMessageTemplateFormat2.tag,
+    READRECORDResponseMessageTemplate.tag)
 }
 
 object ApplicationCurrencyCode extends EMVCurrencySpec[ApplicationCurrencyCode] {
 
-  val tag: BerTag = berTag"9F42"
+  val tag = berTag"9F42"
 
   import fastparse.byte.all.Parser
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
 
-  def parser: Parser[ApplicationCurrencyCode] =
-    parseEMVBySpec(ApplicationCurrencyCode, parseCurrencyCode(_))
+  def parser = parseEMVBySpec(ApplicationCurrencyCode, parseCurrencyCode(_))
 
 }

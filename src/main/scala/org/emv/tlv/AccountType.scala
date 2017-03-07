@@ -49,11 +49,11 @@ trait AccountTypeSpec extends EMVDefaultNumericWithLengthSpec[AccountType] {
   val savingsValue = hex"10"
   val creditValue = hex"30"
 
-  val tag: BerTag = berTag"5F57"
+  val tag = berTag"5F57"
 
-  override val max: Int = 2
+  override val max = 2
 
-  override val min: Int = 2
+  override val min = 2
 
 
 }
@@ -63,6 +63,6 @@ object AccountType extends AccountTypeSpec {
   import fastparse.byte.all.Parser
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser: Parser[AccountType] = parseEMVBySpec(AccountType, parseN(AccountType)(_))
+  def parser = parseEMVBySpec(AccountType, parseN(AccountType)(_))
 
 }

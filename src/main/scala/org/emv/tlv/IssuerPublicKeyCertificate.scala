@@ -2,7 +2,7 @@ package org.emv.tlv
 
 import fastparse.byte.all._
 import org.emv.tlv.EMVTLV.EMVTLVParser._
-import org.emv.tlv.EMVTLV.{EMVDefaultBinaryWithVarLengthSpec, EMVTLVLeaf}
+import org.emv.tlv.EMVTLV._
 import org.lau.tlv.ber._
 import scodec.bits._
 
@@ -12,10 +12,12 @@ import scodec.bits._
   */
 // todo should improve the certificate
 case class IssuerPublicKeyCertificate(override val value: ByteVector)
-  extends EMVTLVLeaf {
+  extends EMVTLVLeaf with TemplateTag {
 
-  override val tag: BerTag = IssuerPublicKeyCertificate.tag
+  override val tag = IssuerPublicKeyCertificate.tag
 
+  override val templates = Set(ResponseMessageTemplateFormat2.tag,
+    READRECORDResponseMessageTemplate.tag)
 }
 
 object IssuerPublicKeyCertificate extends EMVDefaultBinaryWithVarLengthSpec[IssuerPublicKeyCertificate] {

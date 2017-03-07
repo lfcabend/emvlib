@@ -1,6 +1,6 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.{EMVTLVType, Template, TemplateSpec, ValueDataType}
+import org.emv.tlv.EMVTLV._
 import org.lau.tlv.ber._
 import scodec.bits._
 
@@ -10,29 +10,24 @@ import scodec.bits._
 case class FileControlInformationTemplate (constructedValue: List[BerTLV])
   extends Template {
 
-  override val tag: BerTag = FileControlInformationTemplate.tag
+  override val tag = FileControlInformationTemplate.tag
 
-  override val templateTags: Set[BerTag] = FileControlInformationTemplate.templateTags
-
-  override def copyByConstructedValue(newConstructedValue: List[BerTLV]): BerTLVConsT =
+  override def copyByConstructedValue(newConstructedValue: List[BerTLV]) =
     copy(constructedValue = newConstructedValue)
 }
 
 object FileControlInformationTemplate extends TemplateSpec[FileControlInformationTemplate] {
 
-  val tag: BerTag = berTag"6F"
+  val tag = berTag"6F"
 
-  val templateTags: Set[BerTag] = Set(DedicatedFileName.tag, FileControlInformationProprietaryTemplate.tag)
-
-  override val valueDataType: ValueDataType.Value = ValueDataType.B
-  override val maxLength: Int = 252
-  override val minLength: Int = 0
+  override val valueDataType = ValueDataType.B
+  override val maxLength = 252
+  override val minLength = 0
 
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser: Parser[FileControlInformationTemplate] =
-    parseEMVBySpec(FileControlInformationTemplate, parseTemplateValue(FileControlInformationTemplate)(_))
+  def parser = parseEMVBySpec(FileControlInformationTemplate, parseTemplateValue(FileControlInformationTemplate)(_))
 
 
 }

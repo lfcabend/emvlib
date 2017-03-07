@@ -11,7 +11,7 @@ import scodec.bits.ByteVector
 
 trait AmountAuthorizedT extends EMVTLVLeaf {
 
-  override val tag: BerTag = AmountAuthorized.tag
+  override val tag = AmountAuthorized.tag
 
 }
 
@@ -26,11 +26,11 @@ trait AmountAuthorizedSpec extends EMVDefaultNumericWithLengthSpec[AmountAuthori
 
   val length = 6
 
-  val tag: BerTag = berTag"9F02"
+  val tag = berTag"9F02"
 
-  override val max: Int = 12
+  override val max = 12
 
-  override val min: Int = 12
+  override val min = 12
 
 }
 
@@ -39,8 +39,7 @@ object AmountAuthorized extends AmountAuthorizedSpec {
   import fastparse.byte.all.Parser
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser: Parser[AmountAuthorized] =
-    parseEMVBySpec(AmountAuthorized, parseN(AmountAuthorized)(_))
+  def parser = parseEMVBySpec(AmountAuthorized, parseN(AmountAuthorized)(_))
 
 }
 

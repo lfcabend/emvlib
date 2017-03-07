@@ -11,19 +11,18 @@ import scodec.bits._
   */
 case class MerchantIdentifier(override val value: ByteVector) extends EMVTLVLeafTextable {
 
-  override val tag: BerTag = MerchantIdentifier.tag
+  override val tag = MerchantIdentifier.tag
 
 }
 
 object MerchantIdentifier extends EMVAlphaNumericSpecialWithLengthSpec[ByteVector, MerchantIdentifier] {
 
-  val tag: BerTag = berTag"9F16"
-  override val length: Int = 15
-  override val max: Int = 15
-  override val min: Int = 15
+  val tag = berTag"9F16"
+  override val length = 15
+  override val max = 15
+  override val min = 15
 
-  def parser: Parser[MerchantIdentifier] =
-    parseEMVBySpec(MerchantIdentifier, parseB(_))
+  def parser = parseEMVBySpec(MerchantIdentifier, parseB(_))
 
 }
 

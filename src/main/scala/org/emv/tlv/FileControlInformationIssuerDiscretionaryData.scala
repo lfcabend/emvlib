@@ -1,6 +1,6 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.{EMVTLVType, Template, TemplateSpec, ValueDataType}
+import org.emv.tlv.EMVTLV._
 import org.lau.tlv.ber._
 import scodec.bits._
 
@@ -8,30 +8,29 @@ import scodec.bits._
   * Created by lau on 12/12/16.
   */
 case class FileControlInformationIssuerDiscretionaryData (constructedValue: List[BerTLV])
-  extends Template {
+  extends Template with TemplateTag {
 
-  override val tag: BerTag = FileControlInformationIssuerDiscretionaryData.tag
+  override val tag = FileControlInformationIssuerDiscretionaryData.tag
 
-  override val templateTags: Set[BerTag] = FileControlInformationIssuerDiscretionaryData.templateTags
-
-  override def copyByConstructedValue(newConstructedValue: List[BerTLV]): BerTLVConsT =
+  override def copyByConstructedValue(newConstructedValue: List[BerTLV]) =
     copy(constructedValue = newConstructedValue)
+
+  override val templates= Set(FileControlInformationProprietaryTemplate.tag)
+
 }
 
 object FileControlInformationIssuerDiscretionaryData extends TemplateSpec[FileControlInformationIssuerDiscretionaryData] {
 
-  val tag: BerTag = berTag"BF0C"
+  val tag = berTag"BF0C"
 
-  val templateTags: Set[BerTag] = Set(ApplicationTemplate.tag)
-
-  override val valueDataType: ValueDataType.Value = ValueDataType.B
-  override val maxLength: Int = 252
-  override val minLength: Int = 0
+  override val valueDataType = ValueDataType.B
+  override val maxLength = 252
+  override val minLength = 0
 
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser: Parser[FileControlInformationIssuerDiscretionaryData] =
+  def parser =
     parseEMVBySpec(FileControlInformationIssuerDiscretionaryData, parseTemplateValue(FileControlInformationIssuerDiscretionaryData)(_))
 
 }

@@ -12,22 +12,21 @@ import scodec.bits._
 case class PointofServiceEntryMode(override val value: ByteVector)
   extends EMVTLVLeafNTextable {
 
-  override val tag: BerTag = PointofServiceEntryMode.tag
+  override val tag = PointofServiceEntryMode.tag
 
 }
 
 object PointofServiceEntryMode extends EMVDefaultNumericWithLengthSpec[PointofServiceEntryMode] {
 
-  val tag: BerTag = berTag"9F39"
+  val tag = berTag"9F39"
 
-  val length: Int = 1
+  val length = 1
 
-  override val max: Int = 2
+  override val max = 2
 
-  override val min: Int = 2
+  override val min = 2
 
-  def parser: Parser[PointofServiceEntryMode] =
-    parseEMVBySpec(PointofServiceEntryMode, parseB(_))
+  def parser = parseEMVBySpec(PointofServiceEntryMode, parseB(_))
 
 
 }

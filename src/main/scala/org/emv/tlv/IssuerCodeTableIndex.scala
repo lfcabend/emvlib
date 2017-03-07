@@ -2,7 +2,7 @@ package org.emv.tlv
 
 import fastparse.byte.all._
 import org.emv.tlv.EMVTLV.EMVTLVParser._
-import org.emv.tlv.EMVTLV.{EMVDefaultNumericWithLengthSpec, EMVTLVLeafNTextable}
+import org.emv.tlv.EMVTLV._
 import org.lau.tlv.ber._
 import scodec.bits._
 
@@ -10,25 +10,25 @@ import scodec.bits._
   * Created by lau on 11/7/16.
   */
 case class IssuerCodeTableIndex (override val value: ByteVector)
-  extends EMVTLVLeafNTextable with TextableNumber {
+  extends EMVTLVLeafNTextable with TextableNumber with TemplateTag {
 
-  override val tag: BerTag = IssuerCodeTableIndex.tag
+  override val tag = IssuerCodeTableIndex.tag
+
+  override val templates = Set(FileControlInformationProprietaryTemplate.tag)
 
 }
 
 object IssuerCodeTableIndex extends EMVDefaultNumericWithLengthSpec[IssuerCodeTableIndex] {
 
-  val tag: BerTag = berTag"9F11"
+  val tag = berTag"9F11"
 
-  val length: Int = 1
+  val length = 1
 
-  override val max: Int = 2
+  override val max = 2
 
-  override val min: Int = 2
+  override val min = 2
 
-  def parser: Parser[IssuerCodeTableIndex] =
-    parseEMVBySpec(IssuerCodeTableIndex, parseB(_))
-
+  def parser = parseEMVBySpec(IssuerCodeTableIndex, parseB(_))
 
 }
 

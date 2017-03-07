@@ -6,7 +6,7 @@ import scodec.bits.ByteVector
 
 trait AcquirerIdentifierT extends EMVTLVLeaf with NumberTextable {
 
-  override val tag: BerTag = AccountType.tag
+  override val tag = AccountType.tag
 
 }
 
@@ -16,7 +16,7 @@ trait AcquirerIdentifierSpec extends EMVDefaultNumericWithLengthSpec[AcquirerIde
 
   val length = 6
 
-  val tag: BerTag = berTag"9F01"
+  val tag = berTag"9F01"
 
   val min = 6
 
@@ -29,7 +29,6 @@ object AcquirerIdentifier extends AcquirerIdentifierSpec {
   import fastparse.byte.all.Parser
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser: Parser[AcquirerIdentifier] =
-    parseEMVBySpec(AcquirerIdentifier, parseN(AcquirerIdentifier)(_))
+  def parser = parseEMVBySpec(AcquirerIdentifier, parseN(AcquirerIdentifier)(_))
 
 }

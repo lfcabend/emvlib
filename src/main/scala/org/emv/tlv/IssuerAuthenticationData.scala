@@ -2,7 +2,7 @@ package org.emv.tlv
 
 import fastparse.byte.all._
 import org.emv.tlv.EMVTLV.EMVTLVParser._
-import org.emv.tlv.EMVTLV.{EMVDefaultBinaryWithVarLengthSpec, EMVTLVLeaf}
+import org.emv.tlv.EMVTLV._
 import org.lau.tlv.ber._
 import scodec.bits._
 /**
@@ -11,20 +11,19 @@ import scodec.bits._
 case class IssuerAuthenticationData(override val value: ByteVector)
   extends EMVTLVLeaf {
 
-  override val tag: BerTag = IssuerAuthenticationData.tag
+  override val tag = IssuerAuthenticationData.tag
 
 }
 
 object IssuerAuthenticationData extends EMVDefaultBinaryWithVarLengthSpec[IssuerAuthenticationData] {
 
-  val tag: BerTag = berTag"91"
+  val tag = berTag"91"
 
-  override val maxLength: Int = 16
+  override val maxLength = 16
 
-  override val minLength: Int = 8
+  override val minLength = 8
 
-  def parser: Parser[IssuerAuthenticationData] =
-    parseEMVBySpec(IssuerAuthenticationData, parseB(_))
+  def parser = parseEMVBySpec(IssuerAuthenticationData, parseB(_))
 
 
 }

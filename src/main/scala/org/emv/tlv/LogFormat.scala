@@ -10,17 +10,16 @@ import scodec.bits._
   */
 case class LogFormat(override val value: ByteVector) extends EMVTLVLeaf {
 
-  override val tag: BerTag = LogFormat.tag
+  override val tag  = LogFormat.tag
 
 }
 
 object LogFormat extends EMVDefaultBinaryWithVarLengthSpec[LogFormat] {
 
-  val tag: BerTag = berTag"9F4F"
+  val tag = berTag"9F4F"
 
-  override val maxLength: Int = Int.MaxValue
-  override val minLength: Int = 0
+  override val maxLength = Int.MaxValue
+  override val minLength = 0
 
-  def parser: Parser[LogEntry] =
-    parseEMVBySpec(LogEntry, parseB(_))
+  def parser = parseEMVBySpec(LogEntry, parseB(_))
 }

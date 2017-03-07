@@ -12,7 +12,7 @@ case class Select(val cla: APDU.Class, val p1: ParamContainer, val p2: ParamCont
 
 }
 
-case class SelectResponse(val template: Option[EMVTLVType], val statusWord: StatusWordT) extends
+case class SelectResponse(val template: Option[EMVTLVType], override val statusWord: StatusWordT) extends
   APDUCommandResponse(template.map(_.value), statusWord) {
 
 }

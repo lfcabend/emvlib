@@ -5,7 +5,7 @@ import java.util.Currency
 
 import com.neovisionaries.i18n.CountryCode
 import org.iso7816._
-import org.joda.time.LocalDate
+import org.joda.time.{LocalDate, LocalTime}
 import org.lau.tlv.ber._
 import org.lau.tlv.ber.BerTLVParser
 import scodec.bits.ByteVector
@@ -196,6 +196,16 @@ object EMVTLV {
 
   }
 
+  trait EMVTimeSpec[R <: EMVTLVType] extends EMVNumericWithLengthSpec[LocalTime, R] {
+
+    val length: Int = 3
+
+    val max: Int = 6
+
+    val min: Int = 6
+
+  }
+
   trait EMVAIDSpec[R <: EMVTLVType] extends EMVBinaryWithVarLengthSpec[AID, R] {
 
     val maxLength: Int = 16
@@ -207,8 +217,6 @@ object EMVTLV {
   trait EMVDOLSpec[R <: DOL] extends EMVBinaryWithVarLengthSpec[List[(BerTag, Int)], R]
 
   trait TemplateSpec[T <: EMVTLVCons] extends EMVSpec[List[BerTLV], T] with EMVBinaryWithVarLengthSpec[List[BerTLV], T] {
-
-    val templateTags: Set[BerTag]
 
   }
 
@@ -240,6 +248,8 @@ object EMVTLV {
 
   trait EMVTLVLeafWithDate extends EMVTLVLeaf with DateHelper
 
+  trait EMVTLVLeafWithTime extends EMVTLVLeaf with TimeHelper
+
   trait EMVTLVLeafTextable extends EMVTLVLeaf with Textable
 
   trait EMVTLVLeafNTextable extends EMVTLVLeaf with NumberTextable
@@ -247,8 +257,6 @@ object EMVTLV {
   trait EMVTLVLeafCNTextable extends EMVTLVLeaf with CompactNumberTextable
 
   trait Template extends EMVTLVCons {
-
-    val templateTags: Set[BerTag]
 
   }
 
@@ -393,7 +401,8 @@ object EMVTLV {
       P(AnyElem.!.rep(exactly = length).!.withFilter(x => x.length >= min && x.length <= max).
         opaque("Invalid length"))
 
-    def parseEMVDataElement(length: Int, pattern: Regex, emvType: String, toStringFunc: ByteVector => String): Parser[ByteVector] =
+    def parseEMVDataElement(length: Int, pattern: Regex, emvType: String,
+                            toStringFunc: ByteVector => String): Parser[ByteVector] =
       P(BerTLVParser.repParsingForXByte[ByteVector](AnyElem.!, length).!.withFilter(ba => {
         val s: String = toStringFunc(ba)
         pattern.findFirstIn(s).isDefined
@@ -408,6 +417,19 @@ object EMVTLV {
     P(AnyElem.!.rep(exactly = length).!.map(x => {
       Try {
         DateHelper.bytesToDate(x)
+      }
+    }).withFilter({
+      case scala.util.Success(_) => true;
+      case _ => false
+    }).opaque("value is not a valid date").
+      map({ case scala.util.Success(v) => v }))
+
+    //TODO fix this in a more idiomatic way
+    @unchecked
+    def parseTime(length: Int): Parser[LocalTime] =
+    P(AnyElem.!.rep(exactly = length).!.map(x => {
+      Try {
+        TimeHelper.bytesToTime(x)
       }
     }).withFilter({
       case scala.util.Success(_) => true;
@@ -475,37 +497,50 @@ object EMVTLV {
 
     def parseEMVTLV: Parser[EMVTLVType] = P(
       AccountType.parser | AcquirerIdentifier.parser | AdditionalTerminalCapabilities.parser | AmountAuthorized.parser |
-        AmountOther.parser | AmountOtherBinary.parser | ApplicationCryptogram.parser | ApplicationCurrencyCode.parser |
+        AmountOther.parser | AmountOtherBinary.parser | AmountReferenceCurrency.parser | ApplicationCryptogram.parser |
+        ApplicationCurrencyCode.parser |
         ApplicationDedicatedFileName.parser | ApplicationEffectiveDate.parser | ApplicationExpirationDate.parser |
         ApplicationFileLocator.parser | ApplicationIdentifier.parser | ApplicationInterchangeProfile.parser |
-        ApplicationLabel.parser | ApplicationPreferredName.parser | ApplicationPrimaryAccountNumberSequenceNumber.parser |
+        ApplicationLabel.parser | ApplicationPreferredName.parser | ApplicationPrimaryAccountNumber.parser|
+        ApplicationPrimaryAccountNumberSequenceNumber.parser |
         ApplicationIdentifier.parser | ApplicationPriorityIndicator.parser | ApplicationReferenceCurrency.parser |
         ApplicationReferenceCurrencyExponent.parser | ApplicationTemplate.parser | ApplicationTransactionCounter.parser |
         ApplicationUsageControl.parser | ApplicationVersionNumber.parser | ApplicationVersionNumberTerminal.parser |
         AuthorisationCode.parser | AuthorisationResponseCode.parser | BankIdentifierCode.parser | CardholderName.parser |
-        CardholderNameExtended.parser | CardholderNameExtended.parser | CardholderVerificationMethodList.parser |
+        CardholderNameExtended.parser | CardholderVerificationMethodList.parser |
         CardholderVerificationMethodResults.parser | CardRiskManagementDataObjectList1.parser | CardRiskManagementDataObjectList2.parser |
-        CertificationAuthorityPublicKeyIndex.parser | CertificationAuthorityPublicKeyIndexTerminal.parser |
-        DirectoryDefinitionFileName.parser | DirectoryDiscretionaryTemplate.parser | DedicatedFileName.parser|
-        FileControlInformationIssuerDiscretionaryData.parser | FileControlInformationProprietaryTemplate.parser |
-        FileControlInformationTemplate.parser | ICCDynamicNumber.parser | InterfaceDeviceSerialNumber.parser |
+        CertificationAuthorityPublicKeyIndex.parser | CertificationAuthorityPublicKeyIndexTerminal.parser | CommandTemplate.parser |
+        CryptogramInformationData.parser | DataAuthenticationCode.parser |
+        DirectoryDefinitionFileName.parser | DirectoryDiscretionaryTemplate.parser | DynamicDataAuthenticationDataObjectList.parser|
+        DedicatedFileName.parser| FileControlInformationIssuerDiscretionaryData.parser |
+        FileControlInformationProprietaryTemplate.parser | FileControlInformationTemplate.parser |
+        ICCDynamicNumber.parser | InterfaceDeviceSerialNumber.parser |
         InternationalBankAccountNumber.parser | IssuerActionCodeDefault.parser |
         IssuerActionCodeDenial.parser | IssuerActionCodeOnline.parser | IssuerApplicationData.parser | IssuerAuthenticationData.parser |
         IssuerCodeTableIndex.parser | IssuerCountryCode.parser | IssuerCountryCodeA2.parser | IssuerCountryCodeA3.parser |
         IssuerIdentificationNumber.parser | IssuerPublicKeyCertificate.parser | IssuerPublicKeyExponent.parser |
-        IssuerPublicKeyRemainder.parser | IssuerScriptCommand.parser | IssuerIdentificationNumber.parser |
-        IssuerScriptTemplate1.parser | IssuerScriptTemplate2.parser | IssuerURL.parser /*| LanguagePreference.parser*/ |
+        IssuerPublicKeyRemainder.parser | IssuerScriptCommand.parser | IssuerScriptIdentifier.parser |
+        IssuerIdentificationNumber.parser |
+        IssuerScriptTemplate1.parser | IssuerScriptTemplate2.parser | IssuerURL.parser | LanguagePreference.parser |
         LastOnlineApplicationTransactionCounterRegister.parser | LogEntry.parser | LogFormat.parser |
         LowerConsecutiveOfflineLimit.parser | MerchantCategoryCode.parser | MerchantIdentifier.parser |
         MerchantNameLocation.parser | PersonalIdentificationNumberTryCounter.parser | PointofServiceEntryMode.parser |
         ProcessingOptionsDataObjectList.parser | READRECORDResponseMessageTemplate.parser | ResponseMessageTemplateFormat1.parser |
-        ResponseMessageTemplateFormat2.parser | ServiceCode.parser | ShortFileIdentifier.parser | SignedDynamicApplicationData.parser
+        ResponseMessageTemplateFormat2.parser | ServiceCode.parser | ShortFileIdentifier.parser | SignedDynamicApplicationData.parser |
+        SignedStaticApplicationData.parser | StaticDataAuthenticationTagList.parser | TerminalCapabilities.parser |
+        TerminalCountryCode.parser | TerminalFloorLimit.parser | TerminalIdentification.parser | TerminalRiskManagementData.parser |
+        TerminalType.parser | TerminalVerificationResults.parser | Track1DiscretionaryData.parser | Track2DiscretionaryData.parser |
+        Track2EquivalentData.parser | TransactionCertificateDataObjectList.parser | TransactionCertificateHashValue.parser |
+        TransactionCurrencyCode.parser | TransactionCurrencyExponent.parser | TransactionDate.parser |
+        TransactionPersonalIdentificationNumberData.parser | TransactionReferenceCurrencyCode.parser |
+        TransactionReferenceCurrencyExponent.parser | TransactionSequenceCounter.parser | TransactionStatusInformation.parser |
+        TransactionTime.parser | TransactionType.parser | UnpredictableNumber.parser | UpperConsecutiveOfflineLimit.parser
     )
 
     def parseTemplateTag[T <: EMVTLVCons](template: TemplateSpec[T]): Parser[EMVTLVType] =
-      parseEMVTLV.filter(x => {
-        val v = template.templateTags.contains(x.tag)
-        template.templateTags.contains(x.tag)
+      parseEMVTLV.filter(y => y  match {
+        case x: TemplateTag => x.templates.contains(template.tag)
+        case _ => false
       })//.opaque(s"tag is not defined as part of template with tag ${template.tag}")
 
     def parseTemplateValue[T <: EMVTLVCons](template: TemplateSpec[T])(length: Int): Parser[List[EMVTLVType]] =

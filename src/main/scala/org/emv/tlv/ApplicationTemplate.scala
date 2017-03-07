@@ -1,6 +1,6 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.{EMVTLVType, _}
+import org.emv.tlv.EMVTLV._
 import org.lau.tlv.ber._
 import scodec.bits._
 
@@ -10,27 +10,22 @@ import scodec.bits._
 case class ApplicationTemplate(constructedValue: List[BerTLV])
   extends Template with TemplateTag {
 
-  override val tag: BerTag = ApplicationTemplate.tag
+  override val tag = ApplicationTemplate.tag
 
-  override val templateTags: Set[BerTag] = ApplicationTemplate.templateTags
-
-  override def copyByConstructedValue(newConstructedValue: List[BerTLV]): BerTLVConsT =
+  override def copyByConstructedValue(newConstructedValue: List[BerTLV]) =
     copy(constructedValue = newConstructedValue)
 
-  override val templates: Set[BerTag] = Set(FileControlInformationIssuerDiscretionaryData.tag)
+  override val templates = Set(FileControlInformationIssuerDiscretionaryData.tag)
 }
 
 object ApplicationTemplate extends TemplateSpec[ApplicationTemplate] {
 
-  val tag: BerTag = berTag"61"
+  val tag = berTag"61"
 
-  val templateTags: Set[BerTag] = Set(ApplicationPriorityIndicator.tag,
-    ApplicationDedicatedFileName.tag, ApplicationLabel.tag)
+  override val valueDataType = ValueDataType.B
 
-  override val valueDataType: ValueDataType.Value = ValueDataType.B
-
-  override val maxLength: Int = 256
-  override val minLength: Int = 0
+  override val maxLength = 256
+  override val minLength = 0
 
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._

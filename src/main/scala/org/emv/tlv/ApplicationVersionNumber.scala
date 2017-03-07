@@ -1,15 +1,18 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.{EMVDefaultBinaryWithLengthSpec, EMVTLVLeaf}
+import org.emv.tlv.EMVTLV._
 import org.lau.tlv.ber._
 import scodec.bits._
 /**
   * Created by lau on 6/9/16.
   */
 case class ApplicationVersionNumber(override val value:ByteVector)
-  extends EMVTLVLeaf {
+  extends EMVTLVLeaf with TemplateTag {
 
   override val tag: BerTag = ApplicationVersionNumber.tag
+
+  override val templates = Set(ResponseMessageTemplateFormat2.tag,
+    READRECORDResponseMessageTemplate.tag)
 
 }
 

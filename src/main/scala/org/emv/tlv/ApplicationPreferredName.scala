@@ -3,7 +3,7 @@ package org.emv.tlv
 import java.nio.charset.StandardCharsets
 
 import fastparse.byte.all._
-import org.emv.tlv.EMVTLV.{EMVDefaultAlphaNumericSpecialWithVarLengthSpec, EMVTLVLeafTextable}
+import org.emv.tlv.EMVTLV._
 import org.emv.tlv.EMVTLV.EMVTLVParser._
 import org.lau.tlv.ber._
 import scodec.bits._
@@ -11,10 +11,13 @@ import scodec.bits._
 /**
   * Created by lau on 6/5/16.
   */
-case class ApplicationPreferredName(override val value: ByteVector) extends EMVTLVLeafTextable {
+case class ApplicationPreferredName(override val value: ByteVector)
+  extends EMVTLVLeafTextable with TemplateTag {
 
   override val tag: BerTag = ApplicationPreferredName.tag
 
+  override val templates = Set(ApplicationTemplate.tag,
+    FileControlInformationProprietaryTemplate.tag)
 }
 
 object ApplicationPreferredName extends EMVDefaultAlphaNumericSpecialWithVarLengthSpec[ApplicationPreferredName] {

@@ -2,7 +2,7 @@ package org.emv.tlv
 
 import java.util.Currency
 
-import org.emv.tlv.EMVTLV.{EMVAlphaNumericWithVarLengthSpec, EMVTLVLeaf}
+import org.emv.tlv.EMVTLV._
 import org.lau.tlv.ber._
 import scodec.bits._
 
@@ -10,7 +10,7 @@ import scodec.bits._
   * Created by lau on 6/6/16.
   */
 case class ApplicationReferenceCurrency(val currencies: List[Currency])
-  extends EMVTLVLeaf {
+  extends EMVTLVLeaf with TemplateTag {
 
   override def toString: String =
     s"""${super.toString}
@@ -22,6 +22,8 @@ case class ApplicationReferenceCurrency(val currencies: List[Currency])
   override val value: ByteVector = currencies.map((x: Currency) => CurrencyHelper.toValue(x.getNumericCode)).
     foldRight[ByteVector](ByteVector.empty)(_ ++ _)
 
+  override val templates = Set(ResponseMessageTemplateFormat2.tag,
+    READRECORDResponseMessageTemplate.tag)
 }
 
 object ApplicationReferenceCurrency extends EMVAlphaNumericWithVarLengthSpec[List[Currency], ApplicationReferenceCurrency] {

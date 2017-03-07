@@ -9,20 +9,19 @@ import scodec.bits._
   */
 case class AmountReferenceCurrency(override val value: ByteVector) extends EMVTLVLeaf {
 
-  override val tag: BerTag = AmountReferenceCurrency.tag
+  override val tag = AmountReferenceCurrency.tag
 
 }
 
 object AmountReferenceCurrency extends EMVDefaultBinaryWithLengthSpec[AmountReferenceCurrency] {
 
-  val tag: BerTag = berTag"9F3A"
+  val tag = berTag"9F3A"
 
-  val length: Int = 4
+  val length = 4
 
   import fastparse.byte.all.Parser
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parseAmountReferenceCurrency: Parser[AmountReferenceCurrency] =
-    parseEMVBySpec(AmountReferenceCurrency, parseB(_))
+  def parser = parseEMVBySpec(AmountReferenceCurrency, parseB(_))
 
 }

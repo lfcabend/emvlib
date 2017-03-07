@@ -11,20 +11,19 @@ import scodec.bits._
 case class CertificationAuthorityPublicKeyIndexTerminal (override val value: ByteVector)
   extends EMVTLVLeaf {
 
-  override val tag: BerTag = CertificationAuthorityPublicKeyIndexTerminal.tag
+  override val tag = CertificationAuthorityPublicKeyIndexTerminal.tag
 
 }
 
 object CertificationAuthorityPublicKeyIndexTerminal extends EMVDefaultBinaryWithLengthSpec[CertificationAuthorityPublicKeyIndexTerminal] {
 
-  override val length: Int = 1
+  override val length = 1
 
-  override val tag: BerTag = berTag"9F22"
+  override val tag = berTag"9F22"
 
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser: Parser[CertificationAuthorityPublicKeyIndexTerminal] =
-        parseEMVBySpec(CertificationAuthorityPublicKeyIndexTerminal, parseB(_))
+  def parser = parseEMVBySpec(CertificationAuthorityPublicKeyIndexTerminal, parseB(_))
 
 }

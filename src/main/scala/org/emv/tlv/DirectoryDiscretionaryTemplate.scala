@@ -2,7 +2,7 @@ package org.emv.tlv
 
 import fastparse.byte.all._
 import org.emv.tlv.EMVTLV.EMVTLVParser._
-import org.emv.tlv.EMVTLV.{EMVTLVType, Template, TemplateSpec, ValueDataType}
+import org.emv.tlv.EMVTLV._
 import org.lau.tlv.ber._
 import scodec.bits._
 
@@ -10,27 +10,24 @@ import scodec.bits._
   * Created by lau on 11/7/16.
   */
 case class DirectoryDiscretionaryTemplate (constructedValue: List[BerTLV])
-  extends Template {
+  extends Template with TemplateTag {
 
-  override val tag: BerTag = DirectoryDiscretionaryTemplate.tag
-
-  override val templateTags: Set[BerTag] = DirectoryDiscretionaryTemplate.templateTags
+  override val tag = DirectoryDiscretionaryTemplate.tag
 
   override def copyByConstructedValue(newConstructedValue: List[BerTLV]): BerTLVConsT =
     copy(constructedValue = newConstructedValue)
+
+  override val templates = Set(ApplicationTemplate.tag)
 }
 
 object DirectoryDiscretionaryTemplate extends TemplateSpec[DirectoryDiscretionaryTemplate] {
 
-  val tag: BerTag = berTag"73"
-
-  val templateTags: Set[BerTag] = Set()
+  val tag = berTag"73"
 
   override val valueDataType: ValueDataType.Value = ValueDataType.B
-  override val maxLength: Int = 252
-  override val minLength: Int = 0
+  override val maxLength = 252
+  override val minLength = 0
 
-  def parser: Parser[DirectoryDiscretionaryTemplate] =
-    parseEMVBySpec(DirectoryDiscretionaryTemplate, parseTemplateValue(DirectoryDiscretionaryTemplate)(_))
+  def parser = parseEMVBySpec(DirectoryDiscretionaryTemplate, parseTemplateValue(DirectoryDiscretionaryTemplate)(_))
 
 }

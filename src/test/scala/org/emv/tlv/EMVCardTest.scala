@@ -1,17 +1,16 @@
 package org.emv.tlv
 
 import com.neovisionaries.i18n.CountryCode
+import org.emv.EMVCardHandler._
 import org.emv._
 import org.emv.commands.{GPOCommand, GPOResponseFormat1, ReadRecordCommand, ReadRecordResponse}
 import org.iso7816._
-import org.scalatest.{FlatSpec, Matchers}
-
-import scalaz.{-\/, \/-}
-import scalaz.concurrent.Task
 import org.scalamock.scalatest.MockFactory
-import org.lau.tlv.ber._
+import org.scalatest.{FlatSpec, Matchers}
 import scodec.bits._
-import org.emv.EMVCardHandler._
+
+import scalaz.concurrent.Task
+import scalaz.{-\/, \/-}
 
 /**
   * Created by lau on 12/16/16.
@@ -190,6 +189,84 @@ class EMVCardTest extends FlatSpec with Matchers with MockFactory {
       }
       case -\/(e) => {
         fail(e.toString)
+      }
+      case a@_ => fail(s"result did not match expected value: ${a}")
+    }
+
+  }
+
+  it should "be able to process a Read Records Command and stop on failure" in {
+    val context: ConnectionContext = mock[ConnectionContext]
+    val card: CardTrait = mock[CardTrait]
+
+    println("testcase1")
+
+    (card.transmit _).expects(*, argThat[ByteVector](_ => true)).
+      returns(Task(hex"70009000"))
+//    second one never evaluation only task is create
+    (card.transmit _).expects(*, argThat[ByteVector](_ => true)).
+      returns(Task(hex"6985"))
+
+
+    val sfi = 0x01.toByte
+    val record = 0x01.toByte
+
+    val afl = ApplicationFileLocator(List(AFLEntry(0x0C, 0x01, 0x02, 0x00)))
+    println("testcase2")
+    val readRecordTrans: Task[Seq[ReadRecordTransmission]] = readRecords(context, card, afl)
+
+    val expectedReadRecord = ReadRecordCommand(record, sfi)
+    val expectedReadRecord2 = ReadRecordCommand((record + 1).toByte, sfi)
+    val expectedResponse = ReadRecordResponse(Some(READRECORDResponseMessageTemplate(Nil)),
+      NormalProcessingNoFurtherQualification)
+
+    val expectedResponse2 = ReadRecordResponse(None,
+      StatusWord(0x69, 0x85.toByte))
+
+
+    readRecordTrans.unsafePerformSyncAttempt match {
+      case \/-(List(ReadRecordTransmission(Some(expectedReadRecord), Some(expectedResponse)),
+          ReadRecordTransmission(Some(expectedReadRecord2), Some(expectedResponse2)))) => {
+        println("It works!")
+      }
+      case a@_ => fail(s"result did not match expected value: ${a}")
+    }
+
+  }
+
+  it should "be able to process a Read Records Command and stop on failure and not continue" in {
+    val context: ConnectionContext = mock[ConnectionContext]
+    val card: CardTrait = mock[CardTrait]
+
+    println("testcase1")
+
+    (card.transmit _).expects(*, argThat[ByteVector](_ => true)).
+      returns(Task(hex"70009000"))
+
+    (card.transmit _).expects(*, argThat[ByteVector](_ => true)).
+      returns(Task(hex"6985"))
+
+
+    val sfi = 0x01.toByte
+    val record = 0x01.toByte
+
+    val afl = ApplicationFileLocator(List(AFLEntry(0x0C, 0x01, 0x03, 0x00)))
+    println("testcase2")
+    val readRecordTrans: Task[Seq[ReadRecordTransmission]] = readRecords(context, card, afl)
+
+    val expectedReadRecord = ReadRecordCommand(record, sfi)
+    val expectedReadRecord2 = ReadRecordCommand((record + 1).toByte, sfi)
+    val expectedResponse = ReadRecordResponse(Some(READRECORDResponseMessageTemplate(Nil)),
+      NormalProcessingNoFurtherQualification)
+
+    val expectedResponse2 = ReadRecordResponse(None,
+      StatusWord(0x69, 0x85.toByte))
+
+
+    readRecordTrans.unsafePerformSyncAttempt match {
+      case \/-(List(ReadRecordTransmission(Some(expectedReadRecord), Some(expectedResponse)),
+      ReadRecordTransmission(Some(expectedReadRecord2), Some(expectedResponse2)))) => {
+        println("It works!")
       }
       case a@_ => fail(s"result did not match expected value: ${a}")
     }

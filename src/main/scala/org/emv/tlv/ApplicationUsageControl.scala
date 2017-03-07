@@ -10,11 +10,11 @@ import scodec.bits._
   * Created by lau on 6/8/16.
   */
 case class ApplicationUsageControl(override val value: ByteVector)
-  extends EMVTLVLeaf {
+  extends EMVTLVLeaf with TemplateTag {
 
-  override val tag: BerTag = ApplicationUsageControl.tag
+  override val tag = ApplicationUsageControl.tag
 
-  override def toString: String = {
+  override def toString = {
     s"""${super.toString}
        |\tByte 1 bit 8 valid for domestic cash             : ${isValidForDomesticCash}
        |\t       bit 7 valid for international cash        : ${isValidForInterInternationalCash}
@@ -109,18 +109,19 @@ case class ApplicationUsageControl(override val value: ByteVector)
   def withInternationalCashBackAllowedUnSet: ApplicationUsageControl =
     ApplicationUsageControl(withBitInByteUnSet(value, 7, 2))
 
+  override val templates = Set(ResponseMessageTemplateFormat2.tag,
+    READRECORDResponseMessageTemplate.tag)
 }
 
 object ApplicationUsageControl extends EMVDefaultBinaryWithLengthSpec[ApplicationUsageControl] {
 
-  val tag: BerTag = berTag"9F07"
+  val tag = berTag"9F07"
 
-  val length: Int = 2
+  val length = 2
 
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser: Parser[ApplicationUsageControl] =
-    parseEMVBySpec(ApplicationUsageControl, parseB(_))
+  def parser = parseEMVBySpec(ApplicationUsageControl, parseB(_))
 
 }

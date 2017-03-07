@@ -8,7 +8,7 @@ import org.iso7816.{StatusWord, StatusWordT}
   * Created by lau on 2/7/17.
   */
 case class ReadRecordResponse(val readRecordTemplate: Option[READRECORDResponseMessageTemplate],
-                              val statusWord: StatusWordT)
+                              override val statusWord: StatusWordT)
   extends APDUCommandResponse(readRecordTemplate.map(_.value), statusWord)
 
 object ReadRecordResponse {

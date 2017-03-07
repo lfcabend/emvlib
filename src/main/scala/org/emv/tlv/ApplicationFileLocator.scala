@@ -1,6 +1,6 @@
 package org.emv.tlv
 
-import org.emv.tlv.EMVTLV.{EMVBinaryWithVarLengthSpec, EMVTLVLeaf, LeafToStringHelper}
+import org.emv.tlv.EMVTLV._
 import org.lau.tlv.ber._
 import scodec.bits._
 
@@ -8,7 +8,7 @@ import scodec.bits._
   * Created by lau on 6/4/16.
   */
 case class ApplicationFileLocator(val entries: List[AFLEntry])
-  extends EMVTLVLeaf {
+  extends EMVTLVLeaf with TemplateTag {
 
   val value: ByteVector = entries.foldRight[ByteVector](ByteVector.empty)((x, y) => x.value ++ y)
 
@@ -19,6 +19,8 @@ case class ApplicationFileLocator(val entries: List[AFLEntry])
     s"${super.toString}\n" + entries.map(x => s"${x.toString}").mkString("\n")
 
   }
+
+  override val templates = Set(ResponseMessageTemplateFormat2.tag)
 
   /**
     * tuple of sfi, recordNumber
@@ -31,9 +33,6 @@ case class AFLEntry(b1: Byte, b2: Byte, b3: Byte, b4: Byte) {
 
   require(b2 != 0)
   require(b2 <= b3)
-  require(b1 > 0 && b2 >= 0 && b3 >= 0 && b4 >= 0)
-
-  override def toString: String = s"\tsfi: ${sfi}, first: ${firstRecord}, " +
     s"last: ${lastRecord}, oda: ${nrODARecords}"
 
   def sfi: Int = b1 >> 3

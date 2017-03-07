@@ -26,7 +26,7 @@ object LanguageHelper {
 
   def toString(language: LanguageCode): String = s"${language.getName}"
 
-  def toValue(language: LanguageCode) = ByteVector(language.getName.getBytes("ASCII"))
+  def toValue(language: LanguageCode) = ByteVector(language.getAlpha3.getAlpha2.toString.getBytes("ASCII"))
 
   def getLanguageInstance(languageString: String): Option[LanguageCode] =
     LanguageCode.valueOf(languageString) match {

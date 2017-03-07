@@ -13,8 +13,6 @@ case class IssuerScriptTemplate2(constructedValue: List[BerTLV])
 
   override val tag: BerTag = IssuerScriptTemplate2.tag
 
-  override val templateTags: Set[BerTag] = IssuerScriptTemplate1.templateTags
-
   override def copyByConstructedValue(newConstructedValue: List[BerTLV]): BerTLVConsT =
     copy(constructedValue = newConstructedValue)
 }
@@ -25,7 +23,6 @@ object IssuerScriptTemplate2 extends TemplateSpec[IssuerScriptTemplate2] {
 
   override val valueDataType: ValueDataType.Value = ValueDataType.B
 
-  override val templateTags: Set[BerTag] = Set()
   override val maxLength: Int = 252
   override val minLength: Int = 0
 

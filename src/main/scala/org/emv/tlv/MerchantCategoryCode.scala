@@ -12,21 +12,20 @@ import scodec.bits._
 case class MerchantCategoryCode(override val value: ByteVector)
   extends EMVTLVLeafNTextable {
 
-  override val tag: BerTag = MerchantCategoryCode.tag
+  override val tag = MerchantCategoryCode.tag
 
 }
 
 object MerchantCategoryCode extends EMVDefaultNumericWithLengthSpec[MerchantCategoryCode] {
 
-  val tag: BerTag = berTag"9F15"
+  val tag = berTag"9F15"
 
-  val length: Int = 2
+  val length = 2
 
-  override val max: Int = 4
+  override val max = 4
 
-  override val min: Int = 4
+  override val min = 4
 
-  def parser: Parser[MerchantCategoryCode] =
-    parseEMVBySpec(MerchantCategoryCode, parseB(_))
+  def parser = parseEMVBySpec(MerchantCategoryCode, parseB(_))
 
 }

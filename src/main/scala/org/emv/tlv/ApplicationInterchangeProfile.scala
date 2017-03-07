@@ -2,7 +2,7 @@ package org.emv.tlv
 
 import fastparse.byte.all._
 import org.emv.tlv.ByteUtils._
-import org.emv.tlv.EMVTLV.{EMVBinaryWithLengthSpec, EMVDefaultBinaryWithLengthSpec, EMVTLVLeaf, LeafToStringHelper}
+import org.emv.tlv.EMVTLV._
 import org.lau.tlv.ber._
 import scodec.bits._
 import org.emv.tlv.ByteUtils._
@@ -12,7 +12,8 @@ import org.emv.tlv.EMVTLV.EMVTLVParser._
 /**
   * Created by lau on 6/5/16.
   */
-case class ApplicationInterchangeProfile(override val value: ByteVector) extends EMVTLVLeaf {
+case class ApplicationInterchangeProfile(override val value: ByteVector)
+  extends EMVTLVLeaf with TemplateTag {
 
   override val tag: BerTag = ApplicationInterchangeProfile.tag
 
@@ -83,6 +84,8 @@ case class ApplicationInterchangeProfile(override val value: ByteVector) extends
 
   def withContactlessUnSet: ApplicationInterchangeProfile =
     ApplicationInterchangeProfile(withBitInByteUnSet(value, 8, 2))
+
+  override val templates = Set(ResponseMessageTemplateFormat2.tag)
 
 }
 

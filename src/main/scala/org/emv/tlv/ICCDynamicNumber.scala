@@ -10,7 +10,7 @@ import scodec.bits._
   */
 case class ICCDynamicNumber(override val value: ByteVector) extends EMVTLVLeaf() {
 
-  override val tag: BerTag = ICCDynamicNumber.tag
+  override val tag = ICCDynamicNumber.tag
 
 }
 
@@ -20,13 +20,12 @@ object ICCDynamicNumber extends EMVDefaultBinaryWithVarLengthSpec[ICCDynamicNumb
 
   override val minLength = 2
 
-  val tag: BerTag = berTag"9F4C"
+  val tag  = berTag"9F4C"
 
 
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser: Parser[ICCDynamicNumber] =
-    parseEMVBySpec(ICCDynamicNumber, parseB(_))
+  def parser = parseEMVBySpec(ICCDynamicNumber, parseB(_))
 
 }

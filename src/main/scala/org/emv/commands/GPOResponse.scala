@@ -11,12 +11,12 @@ import org.iso7816.{SelectResponse, StatusWord, StatusWordT}
 trait GPOResponse extends APDUCommandResponse
 
 case class GPOResponseFormat1(val format1: Option[GPOResponseMessageTemplateFormat1],
-                              val statusWord: StatusWordT)
+                              override val statusWord: StatusWordT)
   extends APDUCommandResponse(format1.map(_.value), statusWord) with GPOResponse
 
 
 case class GPOResponseFormat2(val format2: Option[ResponseMessageTemplateFormat2],
-                              val statusWord: StatusWordT)
+                              override val statusWord: StatusWordT)
   extends APDUCommandResponse(format2.map(_.value), statusWord) with GPOResponse
 
 object GPOResponse {

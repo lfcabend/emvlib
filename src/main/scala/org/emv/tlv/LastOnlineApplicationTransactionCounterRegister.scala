@@ -9,21 +9,20 @@ import scodec.bits._
 /**
   * Created by lau on 11/17/16.
   */
-case class LastOnlineApplicationTransactionCounterRegister(override val value: ByteVector) extends EMVTLVLeaf with BinaryNumber {
+case class LastOnlineApplicationTransactionCounterRegister(override val value: ByteVector)
+  extends EMVTLVLeaf with BinaryNumber {
 
-  override val tag: BerTag = LastOnlineApplicationTransactionCounterRegister.tag
+  override val tag = LastOnlineApplicationTransactionCounterRegister.tag
 
 }
 
 object LastOnlineApplicationTransactionCounterRegister extends EMVDefaultBinaryWithLengthSpec[LastOnlineApplicationTransactionCounterRegister] {
 
-  val tag: BerTag = berTag"9F13"
+  val tag = berTag"9F13"
 
-  val length: Int = 2
+  val length = 2
 
-
-  def parser: Parser[LastOnlineApplicationTransactionCounterRegister] =
-    parseEMVBySpec(LastOnlineApplicationTransactionCounterRegister, parseB(_))
+  def parser = parseEMVBySpec(LastOnlineApplicationTransactionCounterRegister, parseB(_))
 
 
 }
