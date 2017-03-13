@@ -20,7 +20,7 @@ case class Track2EquivalentData(override val value: ByteVector)
 
 object Track2EquivalentData extends EMVDefaultBinaryWithVarLengthSpec[Track2EquivalentData] {
 
-  val tag = berTag"9F1F"
+  val tag = berTag"57"
 
   def parser = parseEMVBySpec(Track2EquivalentData, parseB(_))
 

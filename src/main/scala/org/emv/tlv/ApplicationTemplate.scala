@@ -30,8 +30,8 @@ object ApplicationTemplate extends TemplateSpec[ApplicationTemplate] {
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser = parseEMVBySpec[List[BerTLV], ApplicationTemplate](ApplicationTemplate,
-      parseTemplateValue(ApplicationTemplate)(_))
+  def parser(parser: Parser[EMVTLVType])  = parseEMVBySpec[List[BerTLV], ApplicationTemplate](ApplicationTemplate,
+      parseTemplateValue(parser)(ApplicationTemplate)(_))
 
 }
 

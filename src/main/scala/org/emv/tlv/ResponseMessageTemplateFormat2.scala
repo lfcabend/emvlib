@@ -27,6 +27,7 @@ object ResponseMessageTemplateFormat2 extends TemplateSpec[ResponseMessageTempla
   override val maxLength = 252
   override val minLength = 0
 
-  def parser = parseEMVBySpec(ResponseMessageTemplateFormat2, parseTemplateValue(ResponseMessageTemplateFormat2)(_))
+  def parser(parser: Parser[EMVTLVType]) = parseEMVBySpec(ResponseMessageTemplateFormat2,
+    parseTemplateValue(parser)(ResponseMessageTemplateFormat2)(_))
 
 }

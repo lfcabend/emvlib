@@ -25,4 +25,6 @@ object TransactionType extends
   override val length = 1
   override val max = 2
   override val min = 2
+
+
 }

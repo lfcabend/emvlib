@@ -6,8 +6,7 @@ import java.util.Currency
 import com.neovisionaries.i18n.CountryCode
 import org.iso7816._
 import org.joda.time.{LocalDate, LocalTime}
-import org.lau.tlv.ber._
-import org.lau.tlv.ber.BerTLVParser
+import org.lau.tlv.ber.{BerTLV, BerTLVParser, BerTag, _}
 import scodec.bits.ByteVector
 
 import scalaz.{-\/, \/, \/-}
@@ -262,7 +261,9 @@ object EMVTLV {
 
   trait DOL extends EMVTLVLeaf {
 
-    val value: ByteVector = list.map(
+    def possibleTags: Map[BerTag, EMVSpec[_, _]] = EMVTLV.tagsMap
+
+    lazy val value: ByteVector = list.map(
       { case (x, y) => x.value ++ BerTLV.encodeLength(y) }
     ).foldRight[ByteVector](ByteVector.empty)(_ ++ _)
 
@@ -291,7 +292,14 @@ object EMVTLV {
       })
 
     override def toString: String =
-      s"${super.toString}\n" + list.map(x => s"\t${x._1} ${BerTLV.encodeLength(x._2).toHex} (${x._2})").mkString("\n")
+      s"${super.toString}\n" + list.map(x => s"\t${x._1} ${BerTLV.encodeLength(x._2).toHex} " +
+        s"(${getAddionalSuffxToString(x._1, x._2)})").mkString("\n")
+
+    def getAddionalSuffxToString(tag: BerTag, length: Int) =
+      possibleTags.get(tag) match {
+        case Some(x) => s"${x.getClass.getSimpleName.replace("$", "")}, ${length}"
+        case None => s"${length}"
+      }
 
   }
 
@@ -328,6 +336,121 @@ object EMVTLV {
 
   }
 
+  val tagsMap: Map[BerTag, EMVSpec[_, _]] =
+    Map(AccountType.tag -> AccountType,
+      AcquirerIdentifier.tag -> AcquirerIdentifier,
+      AdditionalTerminalCapabilities.tag -> AdditionalTerminalCapabilities,
+      AmountAuthorized.tag -> AmountAuthorized,
+      AmountOther.tag -> AmountOther,
+      AmountOtherBinary.tag -> AmountOtherBinary,
+      AmountReferenceCurrency.tag -> AmountReferenceCurrency,
+      ApplicationCryptogram.tag -> ApplicationCryptogram,
+      ApplicationCurrencyCode.tag -> ApplicationCurrencyCode,
+      ApplicationDedicatedFileName.tag -> ApplicationDedicatedFileName,
+      ApplicationEffectiveDate.tag -> ApplicationEffectiveDate,
+      ApplicationExpirationDate.tag -> ApplicationExpirationDate,
+      ApplicationFileLocator.tag -> ApplicationFileLocator,
+      ApplicationIdentifier.tag -> ApplicationIdentifier,
+      ApplicationInterchangeProfile.tag -> ApplicationInterchangeProfile,
+      ApplicationLabel.tag -> ApplicationLabel,
+      ApplicationPreferredName.tag -> ApplicationPreferredName,
+      ApplicationPrimaryAccountNumber.tag -> ApplicationPrimaryAccountNumber,
+      ApplicationPrimaryAccountNumberSequenceNumber.tag -> ApplicationPrimaryAccountNumberSequenceNumber,
+      ApplicationIdentifier.tag -> ApplicationIdentifier,
+      ApplicationPriorityIndicator.tag -> ApplicationPriorityIndicator,
+      ApplicationReferenceCurrency.tag -> ApplicationReferenceCurrency,
+      ApplicationReferenceCurrencyExponent.tag -> ApplicationReferenceCurrencyExponent,
+      ApplicationTemplate.tag -> ApplicationTemplate,
+      ApplicationTransactionCounter.tag -> ApplicationTransactionCounter,
+      ApplicationUsageControl.tag -> ApplicationUsageControl,
+      ApplicationVersionNumber.tag -> ApplicationVersionNumber,
+      ApplicationVersionNumberTerminal.tag -> ApplicationVersionNumberTerminal,
+      AuthorisationCode.tag -> AuthorisationCode,
+      AuthorisationResponseCode.tag -> AuthorisationResponseCode,
+      BankIdentifierCode.tag -> BankIdentifierCode,
+      CardholderName.tag -> CardholderName,
+      CardholderNameExtended.tag -> CardholderNameExtended,
+      CardholderVerificationMethodList.tag -> CardholderVerificationMethodList,
+      CardholderVerificationMethodResults.tag -> CardholderVerificationMethodResults,
+      CardRiskManagementDataObjectList1.tag -> CardRiskManagementDataObjectList1,
+      CardRiskManagementDataObjectList2.tag -> CardRiskManagementDataObjectList2,
+      CertificationAuthorityPublicKeyIndex.tag -> CertificationAuthorityPublicKeyIndex,
+      CertificationAuthorityPublicKeyIndexTerminal.tag -> CertificationAuthorityPublicKeyIndexTerminal,
+      CommandTemplate.tag -> CommandTemplate,
+      CryptogramInformationData.tag -> CryptogramInformationData,
+      DataAuthenticationCode.tag -> DataAuthenticationCode,
+      DirectoryDefinitionFileName.tag -> DirectoryDefinitionFileName,
+      DirectoryDiscretionaryTemplate.tag -> DirectoryDiscretionaryTemplate,
+      DynamicDataAuthenticationDataObjectList.tag -> DynamicDataAuthenticationDataObjectList,
+      DedicatedFileName.tag -> DedicatedFileName,
+      FileControlInformationIssuerDiscretionaryData.tag -> FileControlInformationIssuerDiscretionaryData,
+      FileControlInformationProprietaryTemplate.tag -> FileControlInformationProprietaryTemplate,
+      FileControlInformationTemplate.tag -> FileControlInformationTemplate,
+      ICCDynamicNumber.tag -> ICCDynamicNumber,
+      InterfaceDeviceSerialNumber.tag -> InterfaceDeviceSerialNumber,
+      InternationalBankAccountNumber.tag -> InternationalBankAccountNumber,
+      IssuerActionCodeDefault.tag -> IssuerActionCodeDefault,
+      IssuerActionCodeDenial.tag -> IssuerActionCodeDenial,
+      IssuerActionCodeOnline.tag -> IssuerActionCodeOnline,
+      IssuerApplicationData.tag -> IssuerApplicationData,
+      IssuerAuthenticationData.tag -> IssuerAuthenticationData,
+      IssuerCodeTableIndex.tag -> IssuerCodeTableIndex,
+      IssuerCountryCode.tag -> IssuerCountryCode,
+      IssuerCountryCodeA2.tag -> IssuerCountryCodeA2,
+      IssuerCountryCodeA3.tag -> IssuerCountryCodeA3,
+      IssuerIdentificationNumber.tag -> IssuerIdentificationNumber,
+      IssuerPublicKeyCertificate.tag -> IssuerPublicKeyCertificate,
+      IssuerPublicKeyExponent.tag -> IssuerPublicKeyExponent,
+      IssuerPublicKeyRemainder.tag -> IssuerPublicKeyRemainder,
+      IssuerScriptCommand.tag -> IssuerScriptCommand,
+      IssuerScriptIdentifier.tag -> IssuerScriptIdentifier,
+      IssuerIdentificationNumber.tag -> IssuerIdentificationNumber,
+      IssuerScriptTemplate1.tag -> IssuerScriptTemplate1,
+      IssuerScriptTemplate2.tag -> IssuerScriptTemplate2,
+      IssuerURL.tag -> IssuerURL,
+      LanguagePreference.tag -> LanguagePreference,
+      LastOnlineApplicationTransactionCounterRegister.tag -> LastOnlineApplicationTransactionCounterRegister,
+      LogEntry.tag -> LogEntry, LogFormat.tag -> LogFormat,
+      LowerConsecutiveOfflineLimit.tag -> LowerConsecutiveOfflineLimit,
+      MerchantCategoryCode.tag -> MerchantCategoryCode,
+      MerchantIdentifier.tag -> MerchantIdentifier,
+      MerchantNameLocation.tag -> MerchantNameLocation,
+      PersonalIdentificationNumberTryCounter.tag -> PersonalIdentificationNumberTryCounter,
+      PointofServiceEntryMode.tag -> PointofServiceEntryMode,
+      ProcessingOptionsDataObjectList.tag -> ProcessingOptionsDataObjectList,
+      READRECORDResponseMessageTemplate.tag -> READRECORDResponseMessageTemplate,
+      ResponseMessageTemplateFormat1.tag -> ResponseMessageTemplateFormat1,
+      ResponseMessageTemplateFormat2.tag -> ResponseMessageTemplateFormat2,
+      ServiceCode.tag -> ServiceCode,
+      ShortFileIdentifier.tag -> ShortFileIdentifier,
+      SignedDynamicApplicationData.tag -> SignedDynamicApplicationData,
+      SignedStaticApplicationData.tag -> SignedStaticApplicationData,
+      StaticDataAuthenticationTagList.tag -> StaticDataAuthenticationTagList,
+      TerminalCapabilities.tag -> TerminalCapabilities,
+      TerminalCountryCode.tag -> TerminalCountryCode,
+      TerminalFloorLimit.tag -> TerminalFloorLimit,
+      TerminalIdentification.tag -> TerminalIdentification,
+      TerminalRiskManagementData.tag -> TerminalRiskManagementData,
+      TerminalType.tag -> TerminalType,
+      TerminalVerificationResults.tag -> TerminalVerificationResults,
+      Track1DiscretionaryData.tag -> Track1DiscretionaryData,
+      Track2DiscretionaryData.tag -> Track2DiscretionaryData,
+      Track2EquivalentData.tag -> Track2EquivalentData,
+      TransactionCertificateDataObjectList.tag -> TransactionCertificateDataObjectList,
+      TransactionCertificateHashValue.tag -> TransactionCertificateHashValue,
+      TransactionCurrencyCode.tag -> TransactionCurrencyCode,
+      TransactionCurrencyExponent.tag -> TransactionCurrencyExponent,
+      TransactionDate.tag -> TransactionDate,
+      TransactionPersonalIdentificationNumberData.tag -> TransactionPersonalIdentificationNumberData,
+      TransactionReferenceCurrencyCode.tag -> TransactionReferenceCurrencyCode,
+      TransactionReferenceCurrencyExponent.tag -> TransactionReferenceCurrencyExponent,
+      TransactionSequenceCounter.tag -> TransactionSequenceCounter,
+      TransactionStatusInformation.tag -> TransactionStatusInformation,
+      TransactionTime.tag -> TransactionTime,
+      TransactionType.tag -> TransactionType,
+      UnpredictableNumber.tag -> UnpredictableNumber,
+      UpperConsecutiveOfflineLimit.tag -> UpperConsecutiveOfflineLimit)
+
   object EMVTLVParser {
 
     import fastparse.byte.all._
@@ -336,7 +459,7 @@ object EMVTLV {
     def parseLeafTag(tag: BerTag): Parser[BerTag] =
       P(BerTLVParser.parseNonConstructedATag.filter(x => {
         x == tag
-      }).opaque{
+      }).opaque {
         (s"Leaf Tag is not ${tag}")
       })
 
@@ -344,16 +467,18 @@ object EMVTLV {
     def parseConsTag(tag: BerTag): Parser[BerTag] =
       P(BerTLVParser.parseAConstructedTag.filter(_ == tag).opaque(s"Cons Tag is not ${tag}"))
 
-    def parseTag[V, R <: EMVTLVType](spec: EMVSpec[V, R]): Parser[BerTag] = {
+    def parseTag[V, R <: EMVTLVType](spec: EMVSpec[V, R]): Parser[BerTag] =
       if (spec.tag.isConstructed) parseConsTag(spec.tag)
       else parseLeafTag(spec.tag)
-    }
 
-    def parseEMVBySpec[V, R <: EMVTLVType](spec: EMVSpec[V, R], valueParser: Int => Parser[V]): Parser[R] = P(for {
-      t <- parseTag(spec)
-      l <- parseLength(spec)
-      v <- valueParser(l)
-    } yield (spec(v)))
+    def parseEMVBySpec[V, R <: EMVTLVType](spec: EMVSpec[V, R], valueParser: Int => Parser[V]): Parser[R] =
+      P(for {
+        t <- parseTag(spec).~/
+        l <- parseLength(spec).~/
+        v <- valueParser(l)
+      } yield (spec(v)))
+
+    //        P(parseTag(spec).~/.flatMap(t => parseLength(spec).~/.flatMap(l => valueParser(l).map(v => spec(v)))))
 
     def parseLength[V, R <: EMVTLVType](spec: EMVSpec[V, R]): Parser[Int] = spec match {
       case spec: EMVLengthSpec => P(parseLength(spec.length))
@@ -374,10 +499,10 @@ object EMVTLV {
       parseEMVDataElement(length, s"^([a-z]|[A-Z]){${min},${max}}$$".r, "Alphabetic", toASCIIString)
 
     def parseCN(spec: DataValueVarLengthSpec)(length: Int): Parser[ByteVector] =
-      parseA(spec.min, spec.max)(length)
+      parseCN(spec.min, spec.max)(length)
 
     def parseCN(min: Int, max: Int)(length: Int): Parser[ByteVector] =
-      parseEMVDataElement(length, s"^[0-9]{${min},${max}}F*$$".r, "Alphabetic", toASCIIString)
+      parseEMVDataElement(length, s"^[0-9]{${min},${max}}F*$$".r, "Compressed numeric ", (b: ByteVector) => b.toHex)
 
     def parseAN(spec: DataValueVarLengthSpec)(length: Int): Parser[ByteVector] =
       parseAN(spec.min, spec.max)(length)
@@ -495,25 +620,27 @@ object EMVTLV {
     //    def parseTemplateValue[T <: EMVTLVCons](template: TemplateSpec[T])(length: Int): Parser[List[EMVTLVType]] =
     //      BerTLVParser.repParsingForXByte[EMVTLVType](parseTemplateTag(template), length)
 
-    def parseEMVTLV: Parser[EMVTLVType] = P(
+    def parseEMVTLV: Parser[EMVTLVType] = parseEMVTLV(parseEMVTLV)
+
+    def parseEMVTLV(parser: => Parser[EMVTLVType]): Parser[EMVTLVType] = P(
       AccountType.parser | AcquirerIdentifier.parser | AdditionalTerminalCapabilities.parser | AmountAuthorized.parser |
         AmountOther.parser | AmountOtherBinary.parser | AmountReferenceCurrency.parser | ApplicationCryptogram.parser |
         ApplicationCurrencyCode.parser |
         ApplicationDedicatedFileName.parser | ApplicationEffectiveDate.parser | ApplicationExpirationDate.parser |
         ApplicationFileLocator.parser | ApplicationIdentifier.parser | ApplicationInterchangeProfile.parser |
-        ApplicationLabel.parser | ApplicationPreferredName.parser | ApplicationPrimaryAccountNumber.parser|
+        ApplicationLabel.parser | ApplicationPreferredName.parser | ApplicationPrimaryAccountNumber.parser |
         ApplicationPrimaryAccountNumberSequenceNumber.parser |
         ApplicationIdentifier.parser | ApplicationPriorityIndicator.parser | ApplicationReferenceCurrency.parser |
-        ApplicationReferenceCurrencyExponent.parser | ApplicationTemplate.parser | ApplicationTransactionCounter.parser |
+        ApplicationReferenceCurrencyExponent.parser | ApplicationTemplate.parser(parser) | ApplicationTransactionCounter.parser |
         ApplicationUsageControl.parser | ApplicationVersionNumber.parser | ApplicationVersionNumberTerminal.parser |
         AuthorisationCode.parser | AuthorisationResponseCode.parser | BankIdentifierCode.parser | CardholderName.parser |
         CardholderNameExtended.parser | CardholderVerificationMethodList.parser |
         CardholderVerificationMethodResults.parser | CardRiskManagementDataObjectList1.parser | CardRiskManagementDataObjectList2.parser |
         CertificationAuthorityPublicKeyIndex.parser | CertificationAuthorityPublicKeyIndexTerminal.parser | CommandTemplate.parser |
         CryptogramInformationData.parser | DataAuthenticationCode.parser |
-        DirectoryDefinitionFileName.parser | DirectoryDiscretionaryTemplate.parser | DynamicDataAuthenticationDataObjectList.parser|
-        DedicatedFileName.parser| FileControlInformationIssuerDiscretionaryData.parser |
-        FileControlInformationProprietaryTemplate.parser | FileControlInformationTemplate.parser |
+        DirectoryDefinitionFileName.parser | DirectoryDiscretionaryTemplate.parser(parser) | DynamicDataAuthenticationDataObjectList.parser |
+        DedicatedFileName.parser | FileControlInformationIssuerDiscretionaryData.parser(parser) |
+        FileControlInformationProprietaryTemplate.parser(parser) | FileControlInformationTemplate.parser(parser) |
         ICCDynamicNumber.parser | InterfaceDeviceSerialNumber.parser |
         InternationalBankAccountNumber.parser | IssuerActionCodeDefault.parser |
         IssuerActionCodeDenial.parser | IssuerActionCodeOnline.parser | IssuerApplicationData.parser | IssuerAuthenticationData.parser |
@@ -521,12 +648,12 @@ object EMVTLV {
         IssuerIdentificationNumber.parser | IssuerPublicKeyCertificate.parser | IssuerPublicKeyExponent.parser |
         IssuerPublicKeyRemainder.parser | IssuerScriptCommand.parser | IssuerScriptIdentifier.parser |
         IssuerIdentificationNumber.parser |
-        IssuerScriptTemplate1.parser | IssuerScriptTemplate2.parser | IssuerURL.parser | LanguagePreference.parser |
+        IssuerScriptTemplate1.parser(parser) | IssuerScriptTemplate2.parser(parser) | IssuerURL.parser | LanguagePreference.parser |
         LastOnlineApplicationTransactionCounterRegister.parser | LogEntry.parser | LogFormat.parser |
         LowerConsecutiveOfflineLimit.parser | MerchantCategoryCode.parser | MerchantIdentifier.parser |
         MerchantNameLocation.parser | PersonalIdentificationNumberTryCounter.parser | PointofServiceEntryMode.parser |
-        ProcessingOptionsDataObjectList.parser | READRECORDResponseMessageTemplate.parser | ResponseMessageTemplateFormat1.parser |
-        ResponseMessageTemplateFormat2.parser | ServiceCode.parser | ShortFileIdentifier.parser | SignedDynamicApplicationData.parser |
+        ProcessingOptionsDataObjectList.parser(EMVTLV.tagsMap) | READRECORDResponseMessageTemplate.parser(parser) | ResponseMessageTemplateFormat1.parser |
+        ResponseMessageTemplateFormat2.parser(parser) | ServiceCode.parser | ShortFileIdentifier.parser | SignedDynamicApplicationData.parser |
         SignedStaticApplicationData.parser | StaticDataAuthenticationTagList.parser | TerminalCapabilities.parser |
         TerminalCountryCode.parser | TerminalFloorLimit.parser | TerminalIdentification.parser | TerminalRiskManagementData.parser |
         TerminalType.parser | TerminalVerificationResults.parser | Track1DiscretionaryData.parser | Track2DiscretionaryData.parser |
@@ -537,14 +664,17 @@ object EMVTLV {
         TransactionTime.parser | TransactionType.parser | UnpredictableNumber.parser | UpperConsecutiveOfflineLimit.parser
     )
 
-    def parseTemplateTag[T <: EMVTLVCons](template: TemplateSpec[T]): Parser[EMVTLVType] =
-      parseEMVTLV.filter(y => y  match {
+    def parseTemplateTag[T <: EMVTLVCons](parser: Parser[EMVTLVType])
+                                         (template: TemplateSpec[T]): Parser[EMVTLVType] =
+      parser.filter(y => y match {
         case x: TemplateTag => x.templates.contains(template.tag)
         case _ => false
-      })//.opaque(s"tag is not defined as part of template with tag ${template.tag}")
+      }) //.opaque(s"tag is not defined as part of template with tag ${template.tag}")
 
-    def parseTemplateValue[T <: EMVTLVCons](template: TemplateSpec[T])(length: Int): Parser[List[EMVTLVType]] =
-      BerTLVParser.repParsingForXByte[EMVTLVType](parseTemplateTag(template), length)
+    def parseTemplateValue[T <: EMVTLVCons](parser: Parser[EMVTLVType])
+                                           (template: TemplateSpec[T])
+                                           (length: Int): Parser[List[EMVTLVType]] =
+      BerTLVParser.repParsingForXByte[EMVTLVType](parseTemplateTag(parser)(template), length)
 
   }
 

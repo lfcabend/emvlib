@@ -7,7 +7,7 @@ import org.iso7816.APDU.{APDUCommand, APDUCommandResponse, ParamContainer}
   * Created by Lau on 4/25/2016.
   */
 case class Select(val cla: APDU.Class, val p1: ParamContainer, val p2: ParamContainer, val aid: AID) extends
-  APDUCommand(cla, APDU.SELECT, p1.value, 0.toByte, Some(aid.value), None) {
+  APDUCommand(cla, APDU.SELECT, p1.value, 0.toByte, Some(aid.value), Some(0.toByte)) {
 
 
 }
@@ -22,8 +22,8 @@ object SelectResponse {
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser : Parser[SelectResponse] = for {
-    t <- (parseEMVTLV.?)
+  def parser(parser: Parser[EMVTLVType]) : Parser[SelectResponse] = for {
+    t <- (parseEMVTLV(parser).?)
     st <- StatusWord.parseStatusWord
     _ <- fastparse.byte.all.End
   } yield (SelectResponse(t, st))

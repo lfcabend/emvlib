@@ -13,8 +13,7 @@ trait DateHelper {
 
   override def toString: String =
     s"""${super.toString}
-       |\t${DateHelper.formatterPretty.print(date)}
-     """.stripMargin
+       |\t${DateHelper.formatterPretty.print(date)}""".stripMargin
 
   val value: ByteVector = DateHelper.date2Bytes(date)
 

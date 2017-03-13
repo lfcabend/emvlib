@@ -16,8 +16,7 @@ trait CurrencyHelper {
 
   override def toString: String =
     s"""${super.toString}
-       |\t${CurrencyHelper.toString(currency)}
-     """.stripMargin
+       |\t${CurrencyHelper.toString(currency)}""".stripMargin
 
   val value: ByteVector =  CurrencyHelper.toValue(currency.getNumericCode)
 

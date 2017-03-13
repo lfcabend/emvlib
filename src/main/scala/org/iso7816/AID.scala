@@ -29,7 +29,7 @@ case class AID(val value: ByteVector) {
 
 object AID {
 
-  val PPSE: AID = new AID(ByteVector("".getBytes(Charset.forName("ASCII"))))
+  val PPSE: AID = new AID(ByteVector("2PAY.SYS.DDF01".getBytes(Charset.forName("ASCII"))))
 
 }
 

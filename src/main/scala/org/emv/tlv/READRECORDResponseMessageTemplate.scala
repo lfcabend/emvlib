@@ -27,6 +27,7 @@ object READRECORDResponseMessageTemplate extends TemplateSpec[READRECORDResponse
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser = parseEMVBySpec(READRECORDResponseMessageTemplate, parseTemplateValue(READRECORDResponseMessageTemplate)(_))
+  def parser(parser: Parser[EMVTLVType]) = parseEMVBySpec(READRECORDResponseMessageTemplate,
+    parseTemplateValue(parser)(READRECORDResponseMessageTemplate)(_))
 
 }

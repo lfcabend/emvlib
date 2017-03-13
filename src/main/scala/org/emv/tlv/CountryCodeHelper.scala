@@ -13,8 +13,7 @@ trait CountryCodeHelper  {
 
   override def toString: String =
     s"""${super.toString}
-       |\t${countryCode.getName}
-     """.stripMargin
+       |\t${countryCode.getName}""".stripMargin
 
   val value: ByteVector =  CountryCodeHelper.toValue(countryCode.getNumeric)
 

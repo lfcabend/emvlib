@@ -13,8 +13,7 @@ trait LanguageHelper {
 
   override def toString: String =
     s"""${super.toString}
-       |\t${LanguageHelper.toString(language)}
-     """.stripMargin
+       |\t${LanguageHelper.toString(language)}""".stripMargin
 
   val value: ByteVector =  LanguageHelper.toValue(language)
 

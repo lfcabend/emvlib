@@ -33,15 +33,15 @@ object TerminalProcessor {
 
     _ <- checkIfUserCanceledTheTransaction(userInterface)
 
-    ts2 <- createAIDCandidateList(terminalState)
+    ts2 <- createAIDCandidateList(ts1)
 
-    _ <- failOnError(ts1, _.isCandidateListNotEmpty, "No candidates")
+    _ <- failOnError(ts2, _.isCandidateListNotEmpty, "No candidates")
 
     _ <- checkIfUserCanceledTheTransaction(userInterface)
 
     ts3 <- performSelectApplication(context, card, ts2)
 
-    _ <- failOnError(ts1, _.isSelectionSuccessful, "select failed")
+    _ <- failOnError(ts3, _.isSelectionSuccessful, "select failed")
 
     _ <- checkIfUserCanceledTheTransaction(userInterface)
 
@@ -49,7 +49,7 @@ object TerminalProcessor {
 
     ts4 <- processor.process(userInterface, context, card, ts3)
 
-    ts5 <- authorizer.authorize(ts4).timed(1000L)
+//    ts5 <- authorizer.authorize(ts4).timed(1000L)
 
   } yield (ts4)
 
@@ -97,11 +97,20 @@ object TerminalProcessor {
   def performSelectPPSE(context: ConnectionContext, card: CardTrait, terminalState: TerminalState): Task[TerminalState] =
     performSelect(context, card, AID.PPSE).map(terminalState.withSelectPPSE(_))
 
-  def performSelectApplication(context: ConnectionContext, card: CardTrait, terminalState: TerminalState): Task[TerminalState] =
-    terminalState.getSelectedAID() match {
-      case Some(x) => performSelect(context, card, x).map(terminalState.withSelectPPSE(_))
-      case None => Task.fail(new RuntimeException("No selectec Application"))
+  def performSelectApplication(context: ConnectionContext, card: CardTrait, terminalState: TerminalState): Task[TerminalState] = {
+    val candidateList = terminalState.transientData.candidateList
+    if (candidateList.isEmpty) {
+      Task.fail(new RuntimeException("Empty candidate list"))
+    } else {
+      val aidOption = candidateList.headOption
+      val parser = terminalState.getBrandParser(aidOption)
+      (aidOption, parser) match {
+        case (Some(x), Some(y)) => performSelect(context, card, x, y).map(terminalState.withSelectApplication(_))
+        case (_, None) => Task.fail(new RuntimeException("no aid in candidate list"))
+        case (None, _) => Task.fail(new RuntimeException("no parser"))
+      }
     }
+  }
 
   def processGetProcessingOptions(context: ConnectionContext, card: CardTrait, terminalState: TerminalState) =
     terminalState.transmissions.selectTransmission match {
@@ -123,16 +132,29 @@ object TerminalProcessor {
       case _ => Task.fail(new RuntimeException("GPO was no processed succesfully"))
     }
 
-  def processReadRecords(context: ConnectionContext, card: CardTrait, terminalState: TerminalState, afl: ApplicationFileLocator): Task[TerminalState] =
-    readRecords(context, card, afl).map(terminalState.withReadRecordsTransmission(_))
+  def processReadRecords(context: ConnectionContext, card: CardTrait, terminalState: TerminalState, afl: ApplicationFileLocator): Task[TerminalState] = {
+    val aidOption = terminalState.transientData.candidateList.headOption
+    val parser = terminalState.getBrandParser(aidOption)
+    parser match {
+      case Some(x) =>  readRecords(context, card, afl, x).map(terminalState.withReadRecordsTransmission(_))
+      case None => Task.fail(new RuntimeException("no parser"))
+    }
+  }
 
   def processGetProcessingOptionsBasedOnFciTemplate(context: ConnectionContext, card: CardTrait,
                                                     terminalState: TerminalState,
-                                                    fciTemplate: BerTLV) =
-    for {
-      pdol <- getPDOL(fciTemplate)
-      trans <- performGPO(context, card, pdol, terminalState.terminalTLV())
-    } yield (trans)
+                                                    fciTemplate: BerTLV) = {
+    val aidOption = terminalState.transientData.candidateList.headOption
+    val parser = terminalState.getBrandParser(aidOption)
+    parser match {
+      case Some(x) => for {
+        pdol <- getPDOL(fciTemplate)
+        trans <- performGPO(context, card, pdol, terminalState.terminalTLV(), x)
+      } yield (trans)
+      case None => Task.fail(new RuntimeException("no parser"))
+    }
+
+  }
 
 
   def getPDOL(fciTemplate: BerTLV): Task[Option[ProcessingOptionsDataObjectList]] =
@@ -151,12 +173,12 @@ object TerminalProcessor {
   def getIntersectionBetweenTerminalAndCard(applicationTemplates: List[BerTLV], supportedAids: Set[AID]): List[(AID, Int)] =
     applicationTemplates.flatMap({
       case tem@ApplicationTemplate(templateTags) => {
-        val fileName = templateTags.getTag(DedicatedFileName.tag)
+        val fileName = templateTags.getTag(ApplicationDedicatedFileName.tag)
         val priority = templateTags.getTag(ApplicationPriorityIndicator.tag)
         (fileName, priority) match {
-          case (Some(DedicatedFileName(a)), Some(v@ApplicationPriorityIndicator(_)))
+          case (Some(ApplicationDedicatedFileName(a)), Some(v@ApplicationPriorityIndicator(_)))
             if (supportedAids.contains(a)) => List((a, v.number))
-          case (Some(DedicatedFileName(a)), _)
+          case (Some(ApplicationDedicatedFileName(a)), _)
             if (supportedAids.contains(a)) => List((a, Int.MaxValue))
           case _ => Nil
         }

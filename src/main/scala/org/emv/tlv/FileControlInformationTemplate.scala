@@ -27,7 +27,8 @@ object FileControlInformationTemplate extends TemplateSpec[FileControlInformatio
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser = parseEMVBySpec(FileControlInformationTemplate, parseTemplateValue(FileControlInformationTemplate)(_))
+  def parser(parser: Parser[EMVTLVType]) = parseEMVBySpec(FileControlInformationTemplate,
+    parseTemplateValue(parser)(FileControlInformationTemplate)(_))
 
 
 }

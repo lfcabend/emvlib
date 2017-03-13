@@ -25,8 +25,7 @@ case class ApplicationInterchangeProfile(override val value: ByteVector)
        |\t       bit 4 perform terminal risk management  : ${isPerformTerminalRiskManagement}
        |\t       bit 3 issuer authentication             : ${isIssuerAuthenitcationSupported}
        |\t       bit 1 CDA supported                     : ${isCDASupported}
-       |\tByte 2 bit 8 contacless                        : ${isContactless}
-   """.stripMargin
+       |\tByte 2 bit 8 contacless                        : ${isContactless}""".stripMargin
   }
 
   def isSDASupported: Boolean = isBitSetInByte(value, 7, 1)

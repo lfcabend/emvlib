@@ -13,7 +13,7 @@ import scodec.bits.ByteVector
   */
 case class TransactionCurrencyCode(val currency: Currency) extends EMVTLVLeafWithCurrency {
 
-  override val tag = ApplicationCryptogram.tag
+  override val tag = TransactionCurrencyCode.tag
 
 }
 
@@ -28,3 +28,5 @@ object TransactionCurrencyCode extends EMVCurrencySpec[TransactionCurrencyCode] 
   def parser = parseEMVBySpec(TransactionCurrencyCode, parseCurrencyCode(_))
 
 }
+
+

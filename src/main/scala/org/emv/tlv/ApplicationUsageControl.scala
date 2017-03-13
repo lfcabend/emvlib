@@ -25,8 +25,7 @@ case class ApplicationUsageControl(override val value: ByteVector)
        |\t       bit 2 valid at ATM's                      : ${isValidAtATM}
        |\t       bit 1 valid at terminals other then ATM's : ${isValidAtOtherTerminals}
        |\tByte 2 bit 8 Domestic cashback allowed           : ${isDomesticCashBackAllowed}
-       |\t       bit 7 International cashback allowed      : ${isInternationalCashBackAllowed}
-    """.stripMargin
+       |\t       bit 7 International cashback allowed      : ${isInternationalCashBackAllowed}""".stripMargin
   }
 
   def isValidForDomesticCash: Boolean = isBitSetInByte(value, 8, 1)

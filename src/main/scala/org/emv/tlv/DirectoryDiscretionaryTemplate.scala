@@ -28,6 +28,7 @@ object DirectoryDiscretionaryTemplate extends TemplateSpec[DirectoryDiscretionar
   override val maxLength = 252
   override val minLength = 0
 
-  def parser = parseEMVBySpec(DirectoryDiscretionaryTemplate, parseTemplateValue(DirectoryDiscretionaryTemplate)(_))
+  def parser(parser: Parser[EMVTLVType]) = parseEMVBySpec(DirectoryDiscretionaryTemplate,
+    parseTemplateValue(parser)(DirectoryDiscretionaryTemplate)(_))
 
 }

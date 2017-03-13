@@ -19,8 +19,7 @@ case class LanguagePreference(val languages: List[LanguageCode])
 
   override def toString =
     s"""${super.toString}
-       |\t${languages.map((x: LanguageCode) => LanguageHelper.toString(x)).mkString("\n\t")}
-     """.stripMargin
+       |\t${languages.map((x: LanguageCode) => LanguageHelper.toString(x)).mkString("\n\t")}""".stripMargin
 
   override val tag = LanguagePreference.tag
 

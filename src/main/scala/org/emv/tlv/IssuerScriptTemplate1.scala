@@ -29,7 +29,7 @@ object IssuerScriptTemplate1 extends TemplateSpec[IssuerScriptTemplate1] {
   override val maxLength: Int = 252
   override val minLength: Int = 0
 
-  def parser: Parser[IssuerScriptTemplate1] =
-    parseEMVBySpec(IssuerScriptTemplate1, parseTemplateValue(IssuerScriptTemplate1)(_))
+  def parser(parser: Parser[EMVTLVType]): Parser[IssuerScriptTemplate1] =
+    parseEMVBySpec(IssuerScriptTemplate1, parseTemplateValue(parser)(IssuerScriptTemplate1)(_))
 
 }

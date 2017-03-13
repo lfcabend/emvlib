@@ -19,7 +19,7 @@ case class ApplicationCryptogram(override val value: ByteVector)
 
 object ApplicationCryptogram extends EMVDefaultBinaryWithLengthSpec[ApplicationCryptogram] {
 
-  val tag: BerTag = berTag"9F36"
+  val tag: BerTag = berTag"9F26"
 
   val length: Int = 8
 

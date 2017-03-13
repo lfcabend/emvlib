@@ -1,12 +1,13 @@
 package org.emv
 
 import org.emv.commands._
-import org.emv.tlv.{ApplicationFileLocator, CardRiskManagementDataObjectList1, CryptogramInformationData, ProcessingOptionsDataObjectList}
+import org.emv.tlv._
 import org.iso7816.APDU.{APDUCommand, APDUCommandResponse}
 import org.iso7816._
 import org.lau.tlv.ber._
 import scodec.bits._
 import fastparse.byte.all._
+import org.emv.tlv.EMVTLV.EMVTLVType
 
 import scalaz._
 import Scalaz._
@@ -17,31 +18,33 @@ import scalaz.concurrent.Task
   */
 object EMVCardHandler {
 
-  def performSelect(context: ConnectionContext, card: CardTrait, aid: AID): Task[SelectTransmission] = {
+  def performSelect(context: ConnectionContext, card: CardTrait, aid: AID,
+                    parser: Parser[EMVTLVType] = EMVTLV.EMVTLVParser.parseEMVTLV): Task[SelectTransmission] = {
     val selectCommand = org.iso7816.Select.selectDFFirstOccurenceWithFCIResponse(aid)
     for {
-      response <- transmitEMVCommand(context, card, selectCommand, SelectResponse.parser)
+      response <- transmitEMVCommand(context, card, selectCommand, SelectResponse.parser(parser))
     } yield (new SelectTransmission(Some(selectCommand), Some(response)))
   }
 
   def performGPO(context: ConnectionContext, card: CardTrait, pdol: Option[ProcessingOptionsDataObjectList],
-                 tlvList: List[BerTLV]): Task[GPOTransmission] = {
+                 tlvList: List[BerTLV], parser: Parser[EMVTLVType] = EMVTLV.EMVTLVParser.parseEMVTLV): Task[GPOTransmission] = {
     val gpoCommand = pdol match {
       case Some(x) => GPOCommand(x, tlvList)
       case None => GPOCommand()
     }
     for {
-      response <- transmitEMVCommand(context, card, gpoCommand, GPOResponse.parser)
+      response <- transmitEMVCommand(context, card, gpoCommand, GPOResponse.parser(parser))
     } yield (new GPOTransmission(Some(gpoCommand), Some(response)))
   }
 
-  def readRecords(context: ConnectionContext, card: CardTrait, afl: ApplicationFileLocator): Task[List[ReadRecordTransmission]] = {
+  def readRecords(context: ConnectionContext, card: CardTrait, afl: ApplicationFileLocator,
+                  parser: Parser[EMVTLVType] = EMVTLV.EMVTLVParser.parseEMVTLV): Task[List[ReadRecordTransmission]] = {
 
     def readRecordsRec(context: ConnectionContext, card: CardTrait, aflEnrties: List[(Byte, Byte)],
-                          readRecordTransmissions: List[ReadRecordTransmission]): Task[List[ReadRecordTransmission]] =
+                       readRecordTransmissions: List[ReadRecordTransmission]): Task[List[ReadRecordTransmission]] =
       aflEnrties match {
         //take the first and read it
-        case x::cs => readRecord(context, card, x._1, x._2).
+        case x :: cs => readRecord(context, card, x._1, x._2, parser).
           flatMap({
             //if successful then read more
             case r1@ReadRecordTransmission(rrc, Some(ReadRecordResponse(_, NormalProcessingNoFurtherQualification))) => {
@@ -58,21 +61,22 @@ object EMVCardHandler {
   }
 
 
-
   def readRecord(context: ConnectionContext, card: CardTrait,
-                 sfi: Byte, record: Byte): Task[ReadRecordTransmission] = {
+                 sfi: Byte, record: Byte,
+                 parser: Parser[EMVTLVType] = EMVTLV.EMVTLVParser.parseEMVTLV): Task[ReadRecordTransmission] = {
     val readRecordCommand = ReadRecordCommand(record, sfi)
     for {
-      response <- transmitEMVCommand(context, card, readRecordCommand, ReadRecordResponse.parser)
+      response <- transmitEMVCommand(context, card, readRecordCommand, ReadRecordResponse.parser(parser))
     } yield (new ReadRecordTransmission(Some(readRecordCommand), Some(response)))
   }
 
   def generateAC(context: ConnectionContext, card: CardTrait, cid: CryptogramInformationData,
                  cdol: CardRiskManagementDataObjectList1, tlvList: List[BerTLV],
-                 cda: Boolean = false): Task[GenerateACTransmission] = {
+                 cda: Boolean = false,
+                 parser: Parser[EMVTLVType] = EMVTLV.EMVTLVParser.parseEMVTLV): Task[GenerateACTransmission] = {
     val generateACCommand = GenerateACCommand(cid, cdol, tlvList, cda)
     for {
-      response <- transmitEMVCommand(context, card, generateACCommand, GenerateACResponse.parser)
+      response <- transmitEMVCommand(context, card, generateACCommand, GenerateACResponse.parser(parser))
     } yield (new GenerateACTransmission(Some(generateACCommand), Some(response)))
   }
 

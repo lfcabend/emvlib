@@ -5,7 +5,9 @@ import org.iso7816.{AID, NormalProcessingNoFurtherQualification, Select, SelectR
 import org.lau.tlv.ber._
 import com.softwaremill.quicklens._
 import org.emv.commands._
-import scalaz._
+import fastparse.byte.all._
+
+import org.emv.tlv.EMVTLV.EMVTLVType
 
 /**
   * Created by lau on 7/6/16.
@@ -39,6 +41,11 @@ case class TerminalState(val config: TerminalConfig,
 
   def supportedBrands() = config.brandParameters.map(_.aid).toSet
 
+  def getBrandParser: Option[Parser[EMVTLVType]] =
+    getBrandParser(getSelectedAID())
+
+  def getBrandParser(aid: Option[AID]): Option[Parser[EMVTLVType]] =
+    aid.flatMap(x => BrandParserMapping.mapping.get(x))
 
   def getSelectedAID(): Option[AID] =
     for {
@@ -47,11 +54,11 @@ case class TerminalState(val config: TerminalConfig,
     } yield (r.aid)
 
   def terminalTLV(selectedBrand: AID): List[BerTLV] =
-    config.generalConfig.tlv ++ config.getTlVForBrand(selectedBrand).getOrElse(Nil)
+    transientData.tlv ++ config.getTlVForBrand(selectedBrand).getOrElse(Nil) ++ config.generalConfig.tlv
 
   def terminalTLV(): List[BerTLV] = getSelectedAID() match {
     case Some(x) => terminalTLV(x)
-    case _ => config.generalConfig.tlv
+    case _ => transientData.tlv ++ config.generalConfig.tlv
   }
 
   val isPPSESuccessful: Boolean = isResponseSuccessful(transmissions.selectPPSETransmission)

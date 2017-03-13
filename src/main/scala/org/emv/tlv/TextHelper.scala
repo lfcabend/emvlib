@@ -11,8 +11,7 @@ trait Textable {
 
   override def toString: String =
     s"""${super.toString}
-       |\t${text}
-     """.stripMargin
+       |\t${text}""".stripMargin
 
 }
 

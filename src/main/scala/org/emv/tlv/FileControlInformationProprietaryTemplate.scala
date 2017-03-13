@@ -30,6 +30,7 @@ object FileControlInformationProprietaryTemplate extends TemplateSpec[FileContro
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser = parseEMVBySpec(FileControlInformationProprietaryTemplate, parseTemplateValue(FileControlInformationProprietaryTemplate)(_))
+  def parser(parser: Parser[EMVTLVType]) = parseEMVBySpec(FileControlInformationProprietaryTemplate,
+    parseTemplateValue(parser)(FileControlInformationProprietaryTemplate)(_))
 
 }

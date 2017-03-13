@@ -1,5 +1,6 @@
 package org.emv.commands
 
+import org.emv.tlv.EMVTLV.EMVTLVType
 import org.emv.tlv.{GPOResponseMessageTemplateFormat1, GenerateACResponseMessageTemplateFormat1, ResponseMessageTemplateFormat2}
 import org.iso7816.APDU.APDUCommandResponse
 import org.iso7816.{StatusWord, StatusWordT}
@@ -20,7 +21,7 @@ object GenerateACResponse {
 
   import fastparse.byte.all._
 
-  def parser: Parser[GenerateACResponse] = ???
+  def parser(parser: Parser[EMVTLVType]): Parser[GenerateACResponse] = ???
 //    for {
 //    t <- (org.emv.tlv.READRECORDResponseMessageTemplate.parser.?)
 //    st <- StatusWord.parseStatusWord

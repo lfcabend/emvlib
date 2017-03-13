@@ -25,7 +25,8 @@ class FileControlInformationIssuerDiscretionaryDataTest extends FlatSpec with Ma
   }
 
   "A FileControlInformationIssuerDiscretionaryData" should " be able to parse" in {
-    FileControlInformationIssuerDiscretionaryData.parser.parse(hex"BF0C1A61184F07A0000000031010500A56495341204445424954870101") match {
+    FileControlInformationIssuerDiscretionaryData.parser(EMVTLV.EMVTLVParser.parseEMVTLV).
+      parse(hex"BF0C1A61184F07A0000000031010500A56495341204445424954870101") match {
       case Parsed.Success(ac, _) => println(s"another ${ac}")
       case Parsed.Failure(r1, r2, r3) => {
         println("FAILURE: " + r1)
@@ -39,7 +40,8 @@ class FileControlInformationIssuerDiscretionaryDataTest extends FlatSpec with Ma
   }
 
   "A FileControlInformationProprietaryTemplate" should " be able to parse" in {
-    FileControlInformationProprietaryTemplate.parser.parse(hex"A51DBF0C1A61184F07A0000000031010500A56495341204445424954870101") match {
+    FileControlInformationProprietaryTemplate.parser(EMVTLV.EMVTLVParser.parseEMVTLV).
+      parse(hex"A51DBF0C1A61184F07A0000000031010500A56495341204445424954870101") match {
       case Parsed.Success(ac, _) => println(s"another ${ac}")
       case Parsed.Failure(r1, r2, r3) => {
         println("FAILURE: " + r1)
@@ -55,7 +57,8 @@ class FileControlInformationIssuerDiscretionaryDataTest extends FlatSpec with Ma
 
   "A FileControlInformationTemplate" should " be able to parse" in {
 
-    FileControlInformationTemplate.parser.parse(hex"6F2F840E325041592E5359532E4444463031A51DBF0C1A61184F07A0000000031010500A56495341204445424954870101") match {
+    FileControlInformationTemplate.parser(EMVTLV.EMVTLVParser.parseEMVTLV).
+      parse(hex"6F2F840E325041592E5359532E4444463031A51DBF0C1A61184F07A0000000031010500A56495341204445424954870101") match {
       case Parsed.Success(ac, _) => println(s"another ${ac}")
       case Parsed.Failure(r1, r2, r3) => {
         println("FAILURE: " + r1)

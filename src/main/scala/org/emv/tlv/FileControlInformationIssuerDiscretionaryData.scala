@@ -30,8 +30,9 @@ object FileControlInformationIssuerDiscretionaryData extends TemplateSpec[FileCo
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser =
-    parseEMVBySpec(FileControlInformationIssuerDiscretionaryData, parseTemplateValue(FileControlInformationIssuerDiscretionaryData)(_))
+  def parser(parser: Parser[EMVTLVType]) =
+    parseEMVBySpec(FileControlInformationIssuerDiscretionaryData,
+      parseTemplateValue(parser)(FileControlInformationIssuerDiscretionaryData)(_))
 
 }
 
