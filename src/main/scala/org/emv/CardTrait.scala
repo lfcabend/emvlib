@@ -9,7 +9,7 @@ import scodec.bits._
   */
 trait CardTrait {
 
-  def initialize: Task[ConnectionContext]
+  def initialize(config: ConnectionConfig): Task[ConnectionContext]
 
   def waitForCardOnTerminal(context: ConnectionContext): Task[ConnectionContext]
 

@@ -26,7 +26,8 @@ case class LanguagePreference(val languages: List[LanguageCode])
   override val value = languages.map(LanguageHelper.toValue(_)).
     foldRight[ByteVector](ByteVector.empty)((x, y) => x ++ y)
 
-  override val templates = Set(FileControlInformationProprietaryTemplate.tag)
+  override val templates = Set(FileControlInformationIssuerDiscretionaryData.tag,
+    FileControlInformationProprietaryTemplate.tag)
 
 }
 

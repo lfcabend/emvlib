@@ -26,6 +26,7 @@ class TerminalProcessorTest extends FlatSpec with Matchers with MockFactory {
   "a terminal processor" should " be able to processs a happy flow visa transaction" in {
     val context: ConnectionContext = mock[ConnectionContext]
     val card: CardTrait = mock[CardTrait]
+    val connectionConfig: ConnectionConfig = mock[ConnectionConfig]
 
     val ttq = TerminalTransactionQualifiers(hex"90901912")
     val terminalCountryCode = TerminalCountryCode(CountryCode.NL)
@@ -54,16 +55,16 @@ class TerminalProcessorTest extends FlatSpec with Matchers with MockFactory {
 
     val terminalState: TerminalState = TerminalState(config, transientData, TransactionTransmissions())
 
-    val authorizer: Authorizer = mock[Authorizer]
-    val userInterface: UserInterface = mock[UserInterface]
+    (card.initialize _).expects(*).returns(Task(context))
 
-    (userInterface.isTransactionCanceled _).expects().returning(false)
-    (userInterface.isTransactionCanceled _).expects().returning(false)
-    (userInterface.isTransactionCanceled _).expects().returning(false)
-    (userInterface.isTransactionCanceled _).expects().returning(false)
-    (userInterface.isTransactionCanceled _).expects().returning(false)
+    (card.waitForCardOnTerminal _).expects(*).returns(Task(context))
 
-//    (authorizer.authorize _).expects(*, ???)
+    val auth1: Authorizer = mock[Authorizer]
+    val userInterface1: UserInterface = mock[UserInterface]
+
+    (userInterface1.isTransactionCanceled _).expects().anyNumberOfTimes.returning(false)
+
+    (auth1.authorize _).expects(*).onCall{x: TerminalState => Task(x)}
 
     (card.transmit _).expects(*, argThat[ByteVector](_ == hex"00A404000E325041592E5359532E444446303100")).
       returns(Task(hex"6F2D840E325041592E5359532E4444463031A51BBF0C1861164F07A0000000031010500B56495341204352454449549000"))
@@ -85,11 +86,19 @@ class TerminalProcessorTest extends FlatSpec with Matchers with MockFactory {
 
     import TerminalProcessor._
 
-    implicit def scheduler = Executors.newScheduledThreadPool(1)
+    implicit def scheduler = Executors.newScheduledThreadPool(5)
 
-    val terminalState1 = processTransaction(authorizer, userInterface, context, card, terminalState)
+    val terminalState1 = processTransaction(connectionConfig, card, terminalState)
 
-    terminalState1.unsafePerformSyncAttempt match {
+    val terminalEnv: TerminalEnv = new TerminalEnv {
+      override def authorizer: Authorizer = auth1
+
+      override def userInterface: UserInterface = userInterface1
+
+      override def executor: ScheduledExecutorService = scheduler
+    }
+
+    terminalState1(terminalEnv).unsafePerformSyncAttempt match {
       case \/-(TerminalState(config, transientData, transmissions)) => {
         println(transmissions)
       }

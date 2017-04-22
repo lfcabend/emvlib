@@ -15,7 +15,7 @@ object LibNFCCard extends CardTrait with LazyLogging {
   logger.debug("Loading /home/pi/swiglibnfc/nfcjni.so")
   System.load("/home/pi/swiglibnfc/nfcjni.so");
 
-  override def initialize: Task[ConnectionContext] = Task {
+  override def initialize(connectionConfig: ConnectionConfig): Task[ConnectionContext] = Task {
 
     val ctxPtr = nfc.new_SWIGTYPE_p_p_nfc_context()
     nfc.nfc_init(ctxPtr)
@@ -47,11 +47,11 @@ object LibNFCCard extends CardTrait with LazyLogging {
     mod.setNmt(nfc_modulation_type.NMT_ISO14443A)
 
     logger.debug(s"NFC reader: ${nfc.nfc_device_get_name(reader)} opened")
-    LibNFCConnectionContext(ctxPtr, ctx, reader, mod, None)
+    LibNFCConnectionContext(connectionConfig, ctxPtr, ctx, reader, mod, None)
   }
 
   override def waitForCardOnTerminal(context: ConnectionContext): Task[ConnectionContext] = context match {
-    case c@LibNFCConnectionContext(ctxPtr, ctx, reader, mod, target) => Task {
+    case c@LibNFCConnectionContext(connectionConfig, ctxPtr, ctx, reader, mod, target) => Task {
 
       val target = new nfc_target()
 
@@ -81,7 +81,7 @@ object LibNFCCard extends CardTrait with LazyLogging {
 
   override def close(context: ConnectionContext): Task[Unit] =
     context match {
-      case LibNFCConnectionContext(ctxPtr, ctx, reader, mod, target) => Task {
+      case LibNFCConnectionContext(_, ctxPtr, ctx, reader, mod, target) => Task {
         nfc.nfc_close(reader)
         nfc.nfc_exit(ctx)
       }
@@ -90,7 +90,7 @@ object LibNFCCard extends CardTrait with LazyLogging {
 
   override def transmit(context: ConnectionContext, commandBytes: ByteVector): Task[ByteVector] =
     context match {
-      case LibNFCConnectionContext(ctxPtr, ctx, reader, mod, Some(target)) => Task {
+      case LibNFCConnectionContext(_, ctxPtr, ctx, reader, mod, Some(target)) => Task {
         val responseArr = Array.fill[Byte](264) {
           0
         }

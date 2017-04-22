@@ -1,5 +1,7 @@
 package org.emv.tlv
 
+import java.nio.charset.{Charset, CharsetEncoder}
+
 import org.lau.tlv.ber._
 import scodec.bits._
 
@@ -37,10 +39,15 @@ trait CompactNumberTextable {
   */
 object TextHelper {
 
-  def text(value: ByteVector) = new String(value.toArray, "ASCII")
+  def text(value: ByteVector) = new String(value.toArray, "US-ASCII")
 
   def nToText(value: ByteVector) = value.toHex
 
   def cnToText(value: ByteVector) = value.toHex.replaceAll("F", "")
 
+  val asciiEncoder: CharsetEncoder = Charset.forName("US-ASCII").newEncoder()
+
+  def isPureAscii(v: String) = asciiEncoder.canEncode(v)
+
+  def isPureAscii(v: ByteVector) = asciiEncoder.canEncode(text(v))
 }

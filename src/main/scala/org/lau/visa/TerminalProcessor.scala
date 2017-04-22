@@ -14,22 +14,21 @@ import scala.language.implicitConversions
   */
 object VisaTerminalProcessor extends Processor {
 
-  override def process(userInterface: UserInterface,
-                       context: ConnectionContext,
+  override def process(context: ConnectionContext,
                        card: CardTrait,
-                       terminalState: TerminalState): Task[TerminalState] = for {
+                       terminalState: TerminalState) = for {
 
     ts3 <- processGetProcessingOptions(context, card, terminalState)
 
     _ <- failOnError(ts3, _.isPPSESuccessful, "GPO failed")
 
-    _ <- checkIfUserCanceledTheTransaction(userInterface)
+    _ <- checkIfUserCanceledTheTransaction
 
     ts4 <- processReadRecords(context, card, ts3)
 
     _ <- failOnError(ts3, _.isReadRecordsSuccessful, "Read records failed")
 
-    _ <- checkIfUserCanceledTheTransaction(userInterface)
+    _ <- checkIfUserCanceledTheTransaction
 
   } yield (ts4)
 

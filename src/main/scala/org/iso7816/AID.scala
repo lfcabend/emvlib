@@ -2,6 +2,7 @@ package org.iso7816
 
 import java.nio.charset.Charset
 
+import org.emv.tlv.TextHelper
 import scodec.bits.ByteVector
 
 /**
@@ -23,8 +24,11 @@ case class AID(val value: ByteVector) {
     case _ => AIDCategory.PROPRIETARY
   }
 
-  override def toString = value.toHex
-
+  override def toString =
+    if (TextHelper.isPureAscii(value))
+      TextHelper.text(value)
+    else
+      value.toHex
 }
 
 object AID {

@@ -1,5 +1,6 @@
 package org.emv
 
+import com.typesafe.scalalogging.LazyLogging
 import org.emv.commands._
 import org.emv.tlv._
 import org.iso7816.APDU.{APDUCommand, APDUCommandResponse}
@@ -16,13 +17,15 @@ import scalaz.concurrent.Task
 /**
   * Created by lau on 7/5/16.
   */
-object EMVCardHandler {
+object EMVCardHandler extends LazyLogging {
 
   def performSelect(context: ConnectionContext, card: CardTrait, aid: AID,
                     parser: Parser[EMVTLVType] = EMVTLV.EMVTLVParser.parseEMVTLV): Task[SelectTransmission] = {
     val selectCommand = org.iso7816.Select.selectDFFirstOccurenceWithFCIResponse(aid)
     for {
+      _ <- Task { logger.debug(s"select AID: ${selectCommand.aid}")}
       response <- transmitEMVCommand(context, card, selectCommand, SelectResponse.parser(parser))
+      _ <- Task { logger.debug(s"select response: ${response}")}
     } yield (new SelectTransmission(Some(selectCommand), Some(response)))
   }
 
@@ -33,7 +36,9 @@ object EMVCardHandler {
       case None => GPOCommand()
     }
     for {
+      _ <- Task { logger.debug(s"GPO with data: ${gpoCommand.commandTemplate}") }
       response <- transmitEMVCommand(context, card, gpoCommand, GPOResponse.parser(parser))
+      _ <- Task { logger.debug(s"GPO response: ${response}")}
     } yield (new GPOTransmission(Some(gpoCommand), Some(response)))
   }
 
@@ -66,7 +71,9 @@ object EMVCardHandler {
                  parser: Parser[EMVTLVType] = EMVTLV.EMVTLVParser.parseEMVTLV): Task[ReadRecordTransmission] = {
     val readRecordCommand = ReadRecordCommand(record, sfi)
     for {
+      _ <- Task { logger.debug(s"Read record, file: ${readRecordCommand.sfi}, record: ${readRecordCommand.recordNumber}") }
       response <- transmitEMVCommand(context, card, readRecordCommand, ReadRecordResponse.parser(parser))
+      _ <- Task { logger.debug(s"Read record response: ${response}") }
     } yield (new ReadRecordTransmission(Some(readRecordCommand), Some(response)))
   }
 
@@ -76,7 +83,9 @@ object EMVCardHandler {
                  parser: Parser[EMVTLVType] = EMVTLV.EMVTLVParser.parseEMVTLV): Task[GenerateACTransmission] = {
     val generateACCommand = GenerateACCommand(cid, cdol, tlvList, cda)
     for {
+      _ <- Task { logger.debug(s"Generate ac: ${generateACCommand.commandTemplate}") }
       response <- transmitEMVCommand(context, card, generateACCommand, GenerateACResponse.parser(parser))
+      _ <- Task { logger.debug(s"Generate AC response: ${response}") }
     } yield (new GenerateACTransmission(Some(generateACCommand), Some(response)))
   }
 

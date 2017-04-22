@@ -3,6 +3,7 @@ package org.emv.tlv
 import fastparse.core.Parsed
 import org.scalatest.{FlatSpec, Ignore, Matchers}
 import org.lau.tlv.ber._
+import org.lau.visa.dataelements.ApplicationProgramID
 import scodec.bits._
 
 /**
@@ -75,6 +76,20 @@ class FileControlInformationIssuerDiscretionaryDataTest extends FlatSpec with Ma
     //    FileControlInformationTemplate.parser.parse(hex"6F2F840E325041592E5359532E4444463031A51DBF0C1A61184F07A0000000031010500A56495341204445424954870101") match {
     //    FileControlInformationTemplate.parser.parse(hex"6F10840E325041592E5359532E4444463031") match {
     DedicatedFileName.parser.parse(hex"840E325041592E5359532E4444463031") match {
+      case Parsed.Success(ac, _) => println(s"another ${ac}")
+      case Parsed.Failure(r1, r2, r3) => {
+        println("FAILURE: " + r1)
+        println("FAILURE: " + r2)
+        println("FAILURE: " + r3)
+        fail("didnt parse it")
+      }
+    }
+
+  }
+
+  it should "be able to parse data from our app" in {
+    FileControlInformationIssuerDiscretionaryData.
+      parser(org.lau.visa.Parser.parseEMVTLV).parse(hex"bf0c0f9f5a0500000000015f2d04656c656e") match {
       case Parsed.Success(ac, _) => println(s"another ${ac}")
       case Parsed.Failure(r1, r2, r3) => {
         println("FAILURE: " + r1)

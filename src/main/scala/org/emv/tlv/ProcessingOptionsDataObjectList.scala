@@ -39,7 +39,6 @@ object ProcessingOptionsDataObjectList extends
 
   def parser(possibleTags: Map[BerTag, EMVSpec[_, _]]) =
     parseEMVBySpec(ProcessingOptionsDataObjectList, parseDOL(_).map(x => {
-      println(s"x: ${x}")
       (x, possibleTags)
     }))
 
