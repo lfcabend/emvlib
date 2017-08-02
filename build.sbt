@@ -42,9 +42,9 @@ libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0"
 
 libraryDependencies += "org.scalamock" %% "scalamock-scalatest-support" % "3.5.0" % "test"
 
-addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
-
 libraryDependencies += "org.scalafx" %% "scalafxml-core-sfx8" % "0.3"
+
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 fork in run := true
 

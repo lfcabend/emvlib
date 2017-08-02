@@ -22,7 +22,7 @@ import scalaz.concurrent._
   */
 object TerminalProcessor extends LazyLogging {
 
-  type TransactionState = ReaderT[Task, TerminalEnv, TerminalState]
+  type TransactionSt = ReaderT[Task, TerminalEnv, TerminalState]
 
   type ReaderTTransactionState = ReaderT[Task, TerminalEnv, TerminalState]
 
@@ -46,7 +46,7 @@ object TerminalProcessor extends LazyLogging {
   def connectToCard(card: CardTrait, context: ConnectionContext) =
     ReaderTConnectionContext(_ => card.waitForCardOnTerminal(context))
 
-  def authorize(terminalState: TerminalState): TransactionState =
+  def authorize(terminalState: TerminalState): TransactionSt =
     ReaderTTransactionState(env => {
       implicit val ex = env.executor
       env.authorizer.authorize(terminalState).timed(1000L)
@@ -54,7 +54,7 @@ object TerminalProcessor extends LazyLogging {
 
   def processTransaction(connectionConfig: ConnectionConfig,
                          card: CardTrait,
-                         terminalState: TerminalState): TransactionState = for {
+                         terminalState: TerminalState): TransactionSt = for {
 
     context0 <- initializeCard(card, connectionConfig)
 
@@ -175,7 +175,7 @@ object TerminalProcessor extends LazyLogging {
       case _ => Task.fail(new RuntimeException("Select was no processed successfully"))
     }})
 
-  def processReadRecords(context: ConnectionContext, card: CardTrait, terminalState: TerminalState): TransactionState =
+  def processReadRecords(context: ConnectionContext, card: CardTrait, terminalState: TerminalState): TransactionSt =
     ReaderTTransactionState(_ => {
     terminalState.transmissions.gpoTransmission match {
       case Some(GPOTransmission(_, Some(GPOResponseFormat1(Some(format1), NormalProcessingNoFurtherQualification)))) =>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Rectangle?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<VBox alignment="CENTER" prefHeight="485.0" prefWidth="320.0" spacing="10"
+      xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.emv.gui.TerminalController">
+    <StackPane alignment="CENTER">
+        <Text fx:id="output" text="0.0" textAlignment="RIGHT" wrappingWidth="165">
+         <font>
+            <Font size="24.0" />
+         </font></Text>
+        <Rectangle fill="TRANSPARENT" height="60" stroke="GRAY" width="270" />
+    </StackPane>
+    <HBox alignment="CENTER" spacing="10">
+
+        <Button mnemonicParsing="false" prefHeight="65" prefWidth="85" text="7" BorderPane.alignment="CENTER" onAction="#number"/>
+        <Button mnemonicParsing="false" prefHeight="65" prefWidth="85" text="8" BorderPane.alignment="CENTER" onAction="#number"/>
+        <Button mnemonicParsing="false" prefHeight="65" prefWidth="85" text="9" BorderPane.alignment="CENTER" onAction="#number"/>
+    </HBox>
+    <HBox alignment="CENTER" spacing="10">
+        <Button mnemonicParsing="false" prefHeight="65" prefWidth="85" text="4" BorderPane.alignment="CENTER" onAction="#number"/>
+        <Button mnemonicParsing="false" prefHeight="65" prefWidth="85" text="5" BorderPane.alignment="CENTER" onAction="#number"/>
+        <Button mnemonicParsing="false" prefHeight="65" prefWidth="85" text="6" BorderPane.alignment="CENTER" onAction="#number"/>
+    </HBox>
+    <HBox alignment="CENTER" spacing="10">
+        <Button mnemonicParsing="false" prefHeight="65" prefWidth="85" text="1" BorderPane.alignment="CENTER" onAction="#number"/>
+        <Button mnemonicParsing="false" prefHeight="65" prefWidth="85" text="2" BorderPane.alignment="CENTER" onAction="#number"/>
+        <Button mnemonicParsing="false" prefHeight="65" prefWidth="85" text="3" BorderPane.alignment="CENTER" onAction="#number"/>
+    </HBox>
+    <HBox alignment="CENTER" spacing="10">
+        <Button mnemonicParsing="false" prefHeight="65" prefWidth="85" text="Menu" BorderPane.alignment="CENTER" onAction="#menu"/>
+        <Button mnemonicParsing="false" prefHeight="65" prefWidth="85" text="0" BorderPane.alignment="CENTER" onAction="#number"/>
+        <Button mnemonicParsing="false" prefHeight="65" prefWidth="85" text="." BorderPane.alignment="CENTER" onAction="#dot"/>
+    </HBox>
+    <HBox alignment="CENTER" spacing="10">
+        <Button mnemonicParsing="false" prefHeight="65" prefWidth="85" text="X" BorderPane.alignment="CENTER" onAction="#cancel"/>
+        <Button mnemonicParsing="false" prefHeight="65" prefWidth="85" text="BackSpace" BorderPane.alignment="CENTER"  onAction="#backspace" />
+        <Button mnemonicParsing="false" prefHeight="65" prefWidth="85" text="Ok" BorderPane.alignment="CENTER" onAction="#ok" />
+    </HBox>
+</VBox>

@@ -3,5 +3,11 @@
 /project/*-shim.sbt
 /project/project/
 /project/target/
+/project/.sbtserver
+/project/.sbtserver*
+/project/idea*
+project/sbt-ui.sbt
+projectFilesBackup/
 /target/
 /.idea
+*~

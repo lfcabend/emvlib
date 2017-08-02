@@ -1,6 +1,6 @@
 package org.emv
 
-import org.emv.TerminalProcessor.TransactionState
+import org.emv.TerminalProcessor.TransactionSt
 
 import scalaz.concurrent.Task
 
@@ -9,6 +9,6 @@ import scalaz.concurrent.Task
   */
 trait Processor {
 
-  def process(context: ConnectionContext, card: CardTrait, terminalState: TerminalState): TransactionState
+  def process(context: ConnectionContext, card: CardTrait, terminalState: TerminalState): TransactionSt
 
 }
