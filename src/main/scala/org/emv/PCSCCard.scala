@@ -92,7 +92,7 @@ object PCSCCard extends CardTrait with LazyLogging {
   def waitForCardOnTerminal(terminal: CardTerminal, timeout: Long): Task[Unit] = Task {
     logger.debug(s"waiting for card on ${
       terminal
-    }")
+    } with timeout ${timeout}")
     terminal.waitForCardPresent(timeout)
   }.flatMap({
     case true => Task(Unit)

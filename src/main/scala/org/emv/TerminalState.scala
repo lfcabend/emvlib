@@ -1,13 +1,18 @@
 package org.emv
 
+import com.neovisionaries.i18n.CountryCode
 import org.iso7816.APDU.{APDUCommand, APDUCommandResponse}
 import org.iso7816.{AID, NormalProcessingNoFurtherQualification, Select, SelectResponse}
 import org.lau.tlv.ber._
 import com.softwaremill.quicklens._
 import org.emv.commands._
 import fastparse.byte.all._
-
+import org.emv.tlv._
 import org.emv.tlv.EMVTLV.EMVTLVType
+import org.lau.visa.dataelements.TerminalTransactionQualifiers
+
+import scalaz.Equal
+import scalaz._
 
 /**
   * Created by lau on 7/6/16.
@@ -15,6 +20,10 @@ import org.emv.tlv.EMVTLV.EMVTLVType
 case class TerminalState(val config: TerminalConfig,
                          val transientData: TerminalTransientData,
                          val transmissions: TransactionTransmissions) {
+
+  def withAmountAuthorized(amountAuthorized: AmountAuthorized) =
+    this.modify(_.transientData.amountAuthorized).setTo(Some(amountAuthorized))
+
 
   def isCandidateListNotEmpty() = !transientData.candidateList.isEmpty
 
@@ -116,27 +125,20 @@ case class GenerateACTransmission(override val command: Option[GenerateACCommand
   extends Transmission[GenerateACCommand, GenerateACResponse]
 
 
-case class TerminalConfig(val generalConfig: GeneralParameters, val brandParameters: List[BrandParameters] = Nil) {
+case class TerminalConfig(generalConfig: GeneralParameters, brandParameters: List[BrandParameters] = Nil) {
 
-  def getTlVForBrand(selectedBrand: AID): Option[List[BerTLV]] = brandParameters.
-    filter(_.aid == selectedBrand).map(_.tlv).headOption
+  def getTlVForBrand(selectedBrand: AID): Option[List[BerTLV]] =
+    brandParameters.filter(_.aid == selectedBrand).map(_.tlv).headOption
 
-  def getConfigForBrand(selectedBrand: AID): Option[BrandParameters] = brandParameters.
-    find(_.aid == selectedBrand)
+  def getConfigForBrand(selectedBrand: AID): Option[BrandParameters] =
+    brandParameters.find(_.aid == selectedBrand)
 
-  def withBrandParameters(aid: AID): TerminalConfig = withBrandParameters(aid, Nil)
+  def withBrandParameters(br: BrandParameters): TerminalConfig =
+    this.modify(_.brandParameters).using(_ :+ br)
 
-  def withBrandParameters(aid: AID, tlv: List[BerTLV]): TerminalConfig = this.modify(_.brandParameters).
-    using(_ :+ new BrandParameters(aid, tlv))
-
-  def withTlvAddedToGeneralConfig(value: BerTLV): TerminalConfig = this.modify(_.generalConfig.tlv).
-    using(_ :+ value)
 
   def filterBrandParametersByAID(brandParameters: BrandParameters, aid: AID): Boolean =
     brandParameters.aid == aid
-
-  def withTlvAddedToBrandParameters(aid: AID, value: BerTLV): TerminalConfig =
-    this.modify(_.brandParameters.eachWhere(filterBrandParametersByAID(_, aid)).tlv).using(_ :+ value)
 
 }
 
@@ -147,19 +149,36 @@ trait TLVParameters {
 }
 
 case class TerminalTransientData(val candidateList: List[AID] = Nil,
-                                 override val tlv: List[BerTLV] = Nil) extends TLVParameters
+                                 transactionDate : Option[TransactionDate] = None,
+                                 amountAuthorized : Option[AmountAuthorized] = None,
+                                 amountOther : Option[AmountOther] = None,
+                                 tvr : Option[TerminalVerificationResults] = None ,
+                                 txnType : Option[TransactionType] = None,
+                                 un : Option[UnpredictableNumber] = None,
+                                ) extends TLVParameters {
 
-case class GeneralParameters(override val tlv: List[BerTLV] = Nil) extends TLVParameters {
-
-
-  def withAppendedTlv(value: BerTLV) =
-    this.modify(_.tlv).using(_ :+ value)
+  override val tlv: List[BerTLV] =
+    (transactionDate :: amountAuthorized :: amountOther :: tvr :: txnType :: un :: Nil).flatten
 
 }
 
-case class BrandParameters(val aid: AID, override val tlv: List[BerTLV] = Nil) extends TLVParameters {
+case class GeneralParameters(terminalCountryCode: Option[TerminalCountryCode] = None,
+                              txnCurr : Option[TransactionCurrencyCode] = None,
+                              mnl: Option[MerchantNameLocation] = None) extends TLVParameters {
 
-  def withAppendedTlv(value: BerTLV) =
-    this.modify(_.tlv).using(_ :+ value)
+  override val tlv: List[BerTLV] =
+    (terminalCountryCode :: txnCurr :: mnl :: Nil).flatten
+
+}
+
+abstract class BrandParameters(val aid: AID) extends TLVParameters {
+
+  def getAid() = aid
+
+}
+
+case class VisaBrandParameters(override val aid: AID, ttq: TerminalTransactionQualifiers) extends BrandParameters(aid) {
+
+  override val tlv: List[BerTLV] = List(ttq)
 
 }

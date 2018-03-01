@@ -12,9 +12,12 @@ import scalafx.scene.control.TextField
 import scalafxml.core.macros.sfxml
 import scalaz._
 import org.emv.TerminalState
+import org.emv.tlv.AmountAuthorized
 
 @sfxml
 class TerminalController(output: javafx.scene.text.Text) {
+
+  val amount: AmountModel = new AmountModel()
 
   // event handlers are simple public methods:
   def onCreate(event: ActionEvent) {
@@ -30,22 +33,27 @@ class TerminalController(output: javafx.scene.text.Text) {
   }
 
   def executeTransaction(): Unit = {
+    val amountAuthorized = amount.getAmountAuthorized()
+    val terminalStateWithAmount = ApplicationContext.terminalState.withAmountAuthorized(amountAuthorized)
     val terminalState1 = TerminalProcessor.processTransaction(ApplicationContext.connectionConfig,
-      ApplicationContext.card, ApplicationContext.terminalState)
+      ApplicationContext.card, terminalStateWithAmount)
     terminalState1(ApplicationContext.terminalEnv).unsafePerformSyncAttempt match {
       case \/-(x) => reportEndOfTransaction(x)
-      case -\/(e) =>
+      case -\/(e) => reportError(e)
     }
   }
 
   def reportEndOfTransaction(transactionState: TerminalState)= {
-
+    TerminalFX.notificationController.setText("Transaction Completed")
+    TerminalFX.stage.scene_= (TerminalFX.notificationScene)
   }
 
-  def reportError(e: Exception) {
-
+  def reportError(e: Throwable): Unit = {
+    e.printStackTrace()
+    println(s"error: ${e.getMessage}")
+    TerminalFX.notificationController.setText(e.getMessage)
+    TerminalFX.stage.scene_= (TerminalFX.notificationScene)
   }
-
 
   def number(event: ActionEvent) {
     val button: javafx.scene.control.Button =
@@ -53,14 +61,14 @@ class TerminalController(output: javafx.scene.text.Text) {
 
     println(s"number: ${button.getText}")
     val input = button.getText
-    TerminalFX.amount.addInput(input)
-    output.setText(TerminalFX.amount.getAmount())
+    amount.addInput(input)
+    output.setText(amount.getAmount())
   }
 
   def cancel(event: ActionEvent) {
     println("cancel")
-    TerminalFX.amount.reset()
-    output.setText(TerminalFX.amount.getAmount())
+    amount.reset()
+    output.setText(amount.getAmount())
   }
 
   def dot(event: ActionEvent) {
@@ -74,8 +82,8 @@ class TerminalController(output: javafx.scene.text.Text) {
 
   def backspace(event: ActionEvent) {
     println("backspace")
-    TerminalFX.amount.removeInput()
-    output.setText(TerminalFX.amount.getAmount())
+    amount.removeInput()
+    output.setText(amount.getAmount())
   }
 
 }

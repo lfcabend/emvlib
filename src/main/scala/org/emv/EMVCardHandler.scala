@@ -12,6 +12,7 @@ import org.emv.tlv.EMVTLV.EMVTLVType
 
 import scalaz._
 import Scalaz._
+import scala.annotation.tailrec
 import scalaz.concurrent.Task
 
 /**
@@ -44,6 +45,7 @@ object EMVCardHandler extends LazyLogging {
 
   def readRecords(context: ConnectionContext, card: CardTrait, afl: ApplicationFileLocator,
                   parser: Parser[EMVTLVType] = EMVTLV.EMVTLVParser.parseEMVTLV): Task[List[ReadRecordTransmission]] = {
+
 
     def readRecordsRec(context: ConnectionContext, card: CardTrait, aflEnrties: List[(Byte, Byte)],
                        readRecordTransmissions: List[ReadRecordTransmission]): Task[List[ReadRecordTransmission]] =
@@ -106,7 +108,7 @@ object EMVCardHandler extends LazyLogging {
 
 }
 
-case class ResponsParseError(detailMessage: String) extends Exception {
+case class ResponsParseError(detailMessage: String) extends Exception(detailMessage) {
 
   override def toString: String = detailMessage
 

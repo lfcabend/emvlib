@@ -5,4 +5,4 @@ import org.emv.GeneralParameters
 /**
   * Created by lau on 11/2/16.
   */
-class DefaultGeneralConfig() extends GeneralParameters(List())
+class DefaultGeneralConfig() extends GeneralParameters()

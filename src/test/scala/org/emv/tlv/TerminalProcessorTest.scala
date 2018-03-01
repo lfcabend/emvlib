@@ -31,10 +31,11 @@ class TerminalProcessorTest extends FlatSpec with Matchers with MockFactory {
     val ttq = TerminalTransactionQualifiers(hex"90901912")
     val terminalCountryCode = TerminalCountryCode(CountryCode.NL)
     val txnCurr = TransactionCurrencyCode(Currency.getInstance(Locale.UK))
-    val brands = List(BrandParameters(AID(hex"A0000000031010"), List(ttq)))
-    val generalTags = GeneralParameters(List(
-      txnCurr,
-      terminalCountryCode))
+    val brands = List(VisaBrandParameters(AID(hex"A0000000031010"), ttq))
+    val generalTags = GeneralParameters(
+      Some(terminalCountryCode),
+      Some(txnCurr),
+      None)
 
     val config = TerminalConfig(generalTags, brands)
 
@@ -44,14 +45,14 @@ class TerminalProcessorTest extends FlatSpec with Matchers with MockFactory {
     val tvr = TerminalVerificationResults()
     val txnType = TransactionType(hex"00")
     val un = UnpredictableNumber(hex"01010010")
-    val transientData = TerminalTransientData(Nil, List(
-      amountAuthorized,
-      amountOther,
-      tvr,
-      transactionDate,
-      txnType,
-      un
-    ))
+    val transientData = TerminalTransientData(Nil,
+      Some(transactionDate),
+      Some(amountAuthorized),
+      Some(amountOther),
+      Some(tvr),
+      Some(txnType),
+      Some(un)
+    )
 
     val terminalState: TerminalState = TerminalState(config, transientData, TransactionTransmissions())
 

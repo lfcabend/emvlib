@@ -1,6 +1,7 @@
 package org.emv.tlv
 
 import org.emv.tlv.EMVTLV._
+import org.lau.tlv.ber.BerTLVParser.parseTLV
 import org.lau.tlv.ber._
 import scodec.bits._
 
@@ -30,8 +31,9 @@ object ApplicationTemplate extends TemplateSpec[ApplicationTemplate] {
   import fastparse.byte.all._
   import org.emv.tlv.EMVTLV.EMVTLVParser._
 
-  def parser(parser: Parser[EMVTLVType])  = parseEMVBySpec[List[BerTLV], ApplicationTemplate](ApplicationTemplate,
-      parseTemplateValue(parser)(ApplicationTemplate)(_))
+  def parser(parser: Parser[EMVTLVType]) =
+    parseEMVBySpec[List[BerTLV], ApplicationTemplate](ApplicationTemplate,
+      x => BerTLVParser.repParsingForXByte(EMVTLVParser.parseEMVTLV, x))
 
 }
 

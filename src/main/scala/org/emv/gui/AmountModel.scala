@@ -1,5 +1,9 @@
 package org.emv.gui
 
+import org.emv.tlv.AmountAuthorized
+import scodec.bits.ByteVector._
+import scodec.bits._
+
 /**
   * Created by Lau on 5/6/2017.
   */
@@ -27,5 +31,10 @@ class AmountModel {
 
   def reset(): Unit = amount = ""
 
+  def getAmountAuthorized() = {
+    val amountWithNoDot = getAmount().replaceAll("[^0-9]", "")
+    val v = String.format("%012d", amountWithNoDot.toInt.asInstanceOf[AnyRef])
+    AmountAuthorized(fromValidHex(v))
+  }
 
 }

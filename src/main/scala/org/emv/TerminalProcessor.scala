@@ -1,11 +1,11 @@
 package org.emv
 
-import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 import javax.smartcardio.Card
 
 import org.emv.tlv.EMVTLV.EMVTLVType
 import org.emv.tlv._
-import org.iso7816.{AID, NormalProcessingNoFurtherQualification, SelectResponse}
+import org.iso7816.{AID, NormalProcessingNoFurtherQualification, Select, SelectResponse}
 import org.lau.tlv.ber._
 import scodec.bits._
 import EMVCardHandler._
@@ -14,8 +14,10 @@ import fastparse.byte.all.Parser
 import org.emv.commands.{GPOResponseFormat1, GPOResponseFormat2}
 
 import scala.collection.immutable.::
+import scala.concurrent.duration.Duration
 import scalaz._
 import scalaz.concurrent._
+
 
 /**
   * Created by lau on 7/6/16.
@@ -58,7 +60,11 @@ object TerminalProcessor extends LazyLogging {
 
     context0 <- initializeCard(card, connectionConfig)
 
+    _ <- reportTerminalInitialized(context0, terminalState)
+
     context <- connectToCard(card, context0)
+
+    _ <- reportCardConnected(context, terminalState)
 
     ts1 <- performSelectPPSE(context, card, terminalState)
 
@@ -130,10 +136,27 @@ object TerminalProcessor extends LazyLogging {
 
 
   def failOnError(terminalState: TerminalState, check: TerminalState => Boolean, msg: String) =
-    ReaderTTransactionState(_ => if (!terminalState.isPPSESuccessful) Task.fail(new RuntimeException(msg)) else Task(terminalState))
+    ReaderTTransactionState(_ =>
+      if (!terminalState.isPPSESuccessful) Task.fail(new RuntimeException(msg))
+      else Task(terminalState))
 
   def performSelectPPSE(context: ConnectionContext, card: CardTrait, terminalState: TerminalState) =
-    ReaderTTransactionState(_ => performSelect(context, card, AID.PPSE).map(terminalState.withSelectPPSE(_)))
+    ReaderTTransactionState(env =>
+      performSelect(context, card, AID.PPSE).
+      map(transmission => reportAndUpdateState[Select, SelectResponse, SelectTransmission]
+        (env.userInterface, transmission, terminalState, terminalState.withSelectPPSE))
+    )
+
+  def reportAndUpdateState[A, B, T <: Transmission[A, B]](userInterface: UserInterface,
+                           transmission: T,
+                           terminalState: TerminalState,
+                           updateFunction: T => TerminalState): TerminalState = {
+
+    val newState = updateFunction(transmission)
+    userInterface.reportCommandProcessed(transmission, newState)
+    newState
+
+  }
 
   def performFinalSelectApplication(context: ConnectionContext, card: CardTrait, terminalState: TerminalState) = ReaderTTransactionState(_ => {
     val candidateList = terminalState.transientData.candidateList
@@ -241,4 +264,21 @@ object TerminalProcessor extends LazyLogging {
       case _ => Nil
     })
 
+  def reportTerminalInitialized(connectionContext: ConnectionContext, terminalState: TerminalState): ReaderT[Task, TerminalEnv, Unit] =
+    Kleisli(env =>
+    Task(
+      env.userInterface.terminalInitialized(connectionContext, terminalState)
+    ))
+
+  def reportCardConnected(connectionContext: ConnectionContext, terminalState: TerminalState): ReaderT[Task, TerminalEnv, Unit] =
+    Kleisli(env =>
+      Task(
+        env.userInterface.cardConnected(connectionContext, terminalState)
+      ))
+
+  def reportCommandProcessed(connectionContext: ConnectionContext, terminalState: TerminalState): ReaderT[Task, TerminalEnv, Unit] =
+    Kleisli(env =>
+      Task(
+        env.userInterface.cardConnected(connectionContext, terminalState)
+      ))
 }

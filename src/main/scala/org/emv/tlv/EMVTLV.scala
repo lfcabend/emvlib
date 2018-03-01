@@ -307,7 +307,7 @@ object EMVTLV {
 
     val value: ByteVector
 
-    val label: String = this.getClass.getSimpleName
+    lazy val label: String = this.getClass.getSimpleName
 
     val postFixLabel: Option[String] = None
 
@@ -661,7 +661,7 @@ object EMVTLV {
         TransactionCurrencyCode.parser | TransactionCurrencyExponent.parser | TransactionDate.parser |
         TransactionPersonalIdentificationNumberData.parser | TransactionReferenceCurrencyCode.parser |
         TransactionReferenceCurrencyExponent.parser | TransactionSequenceCounter.parser | TransactionStatusInformation.parser |
-        TransactionTime.parser | TransactionType.parser | UnpredictableNumber.parser | UpperConsecutiveOfflineLimit.parser
+        TransactionTime.parser | TransactionType.parser | UnpredictableNumber.parser | UpperConsecutiveOfflineLimit.parser | UnknownTag.parser
     )
 
     def parseTemplateTag[T <: EMVTLVCons](parser: Parser[EMVTLVType])

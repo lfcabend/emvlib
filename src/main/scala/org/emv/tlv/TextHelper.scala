@@ -41,6 +41,8 @@ object TextHelper {
 
   def text(value: ByteVector) = new String(value.toArray, "US-ASCII")
 
+  def textToBytes(value: String) = ByteVector(value.getBytes(Charset.forName("US-ASCII")))
+
   def nToText(value: ByteVector) = value.toHex
 
   def cnToText(value: ByteVector) = value.toHex.replaceAll("F", "")
