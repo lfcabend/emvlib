@@ -1,7 +1,6 @@
 package org.emv.tlv
 
 import org.emv.tlv.EMVTLV._
-import org.lau.tlv.ber.BerTLVParser.parseTLV
 import org.lau.tlv.ber._
 import scodec.bits._
 

@@ -1,6 +1,7 @@
 package org.emv.gui
 
-import org.emv.UserInterface
+import org.emv._
+import org.iso7816.APDU.{APDUCommand, APDUCommandResponse}
 
 import scala.swing._
 
@@ -14,6 +15,18 @@ class UI extends MainFrame with UserInterface {
   contents = new Label("Here is the contents!")
 
   def isTransactionCanceled: Boolean = false
+
+  override def cardConnected(connectionContext: ConnectionContext, terminalState: TerminalState): Unit = {}
+
+  override def terminalInitialized(connectionContext: ConnectionContext, terminalState: TerminalState): Unit = {}
+
+  override def reportPPSESelected(transmission: SelectTransmission, newState: TerminalState): Unit = {}
+
+  override def reportFinalAppSelected(transmission: SelectTransmission, newState: TerminalState): Unit = {}
+
+  override def reportGPOProcessed(transmission: GPOTransmission, newState: TerminalState): Unit = {}
+
+  override def reportReadRecordsProcessed(transmission: List[ReadRecordTransmission], newState: TerminalState): Unit = {}
 }
 
 object GuiProgramOne {

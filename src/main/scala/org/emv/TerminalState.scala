@@ -154,7 +154,7 @@ case class TerminalTransientData(val candidateList: List[AID] = Nil,
                                  amountOther : Option[AmountOther] = None,
                                  tvr : Option[TerminalVerificationResults] = None ,
                                  txnType : Option[TransactionType] = None,
-                                 un : Option[UnpredictableNumber] = None,
+                                 un : Option[UnpredictableNumber] = None
                                 ) extends TLVParameters {
 
   override val tlv: List[BerTLV] =

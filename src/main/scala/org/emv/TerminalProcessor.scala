@@ -11,7 +11,8 @@ import scodec.bits._
 import EMVCardHandler._
 import com.typesafe.scalalogging.LazyLogging
 import fastparse.byte.all.Parser
-import org.emv.commands.{GPOResponseFormat1, GPOResponseFormat2}
+import org.emv.commands.{GPOCommand, GPOResponse, GPOResponseFormat1, GPOResponseFormat2}
+import org.iso7816.APDU.{APDUCommand, APDUCommandResponse}
 
 import scala.collection.immutable.::
 import scala.concurrent.duration.Duration
@@ -102,7 +103,7 @@ object TerminalProcessor extends LazyLogging {
       }))
 
 
-  def createAIDCandidateList(terminalState: TerminalState)= ReaderTTransactionState(_ => {
+  def createAIDCandidateList(terminalState: TerminalState) = ReaderTTransactionState(_ => {
 
     val ppseTrans = terminalState.transmissions.selectPPSETransmission
     ppseTrans match {
@@ -125,7 +126,7 @@ object TerminalProcessor extends LazyLogging {
     case _ => Task.fail(new RuntimeException("Could not find the application templates"))
   }
 
-  def getBrandProcessor(terminalState: TerminalState):  ReaderT[Task, TerminalEnv, Processor] = Kleisli(env =>
+  def getBrandProcessor(terminalState: TerminalState): ReaderT[Task, TerminalEnv, Processor] = Kleisli(env =>
     terminalState.getSelectedAID() match {
       case Some(x) => BrandProcessorMap.mapping.get(x) match {
         case Some(x) => Task(x)
@@ -143,22 +144,14 @@ object TerminalProcessor extends LazyLogging {
   def performSelectPPSE(context: ConnectionContext, card: CardTrait, terminalState: TerminalState) =
     ReaderTTransactionState(env =>
       performSelect(context, card, AID.PPSE).
-      map(transmission => reportAndUpdateState[Select, SelectResponse, SelectTransmission]
-        (env.userInterface, transmission, terminalState, terminalState.withSelectPPSE))
-    )
+        map(x => {
+          val newTerminalState = terminalState.withSelectPPSE(x)
+          env.userInterface.reportPPSESelected(x, newTerminalState)
+          newTerminalState
+        }))
 
-  def reportAndUpdateState[A, B, T <: Transmission[A, B]](userInterface: UserInterface,
-                           transmission: T,
-                           terminalState: TerminalState,
-                           updateFunction: T => TerminalState): TerminalState = {
 
-    val newState = updateFunction(transmission)
-    userInterface.reportCommandProcessed(transmission, newState)
-    newState
-
-  }
-
-  def performFinalSelectApplication(context: ConnectionContext, card: CardTrait, terminalState: TerminalState) = ReaderTTransactionState(_ => {
+  def performFinalSelectApplication(context: ConnectionContext, card: CardTrait, terminalState: TerminalState) = ReaderTTransactionState(env => {
     val candidateList = terminalState.transientData.candidateList
     if (candidateList.isEmpty) {
       Task.fail(new RuntimeException("Empty candidate list"))
@@ -166,56 +159,72 @@ object TerminalProcessor extends LazyLogging {
       val aidOption = candidateList.headOption
       val parser = terminalState.getBrandParser(aidOption)
       (aidOption, parser) match {
-        case (Some(x), Some(y)) => performSelectTillSuccess(context, card, terminalState, x, y)
+        case (Some(x), Some(y)) => performSelectTillSuccess(env, context, card, terminalState, x, y)
         case (_, None) => Task.fail(new RuntimeException("no aid in candidate list"))
         case (None, _) => Task.fail(new RuntimeException("no parser"))
       }
     }
   })
 
-  def performSelectTillSuccess(context: ConnectionContext, card: CardTrait, terminalState: TerminalState,
+  def performSelectTillSuccess(env: TerminalEnv, context: ConnectionContext, card: CardTrait, terminalState: TerminalState,
                                aid: AID, parser: Parser[EMVTLVType]): Task[TerminalState] = {
     //    performSelect(context, card, aid, parser).map(terminalState.withSelectApplication(_))
     performSelect(context, card, aid, parser).flatMap({
       case r1@SelectTransmission(_, Some(SelectResponse(_, NormalProcessingNoFurtherQualification))) => //success
-        Task(terminalState.withSelectApplication(r1))
+        Task({
+          val newTerminalState = terminalState.withSelectApplication(r1)
+          env.userInterface.reportPPSESelected(r1, newTerminalState)
+          newTerminalState
+        })
       case _ if terminalState.transientData.candidateList.size > 1 => {
         //go into recursion
         val newCandidateList = terminalState.transientData.candidateList.tail
         val newTerminalState = terminalState.withAIDCandidateList(newCandidateList)
         val aid = newCandidateList.head
-        performSelectTillSuccess(context, card, newTerminalState, aid, parser)
+        performSelectTillSuccess(env, context, card, newTerminalState, aid, parser)
       }
       case _ => Task.fail(new RuntimeException("Could not select an AID successfully"))
     })
   }
 
   def processGetProcessingOptions(context: ConnectionContext, card: CardTrait, terminalState: TerminalState) =
-    ReaderTTransactionState(_ => {terminalState.transmissions.selectTransmission match {
-      case Some(SelectTransmission(Some(_), Some(SelectResponse(Some(d), NormalProcessingNoFurtherQualification)))) =>
-        processGetProcessingOptionsBasedOnFciTemplate(context, card, terminalState, d).
-          map(terminalState.withGetProcessingOptions)
-      case _ => Task.fail(new RuntimeException("Select was no processed successfully"))
-    }})
+    ReaderTTransactionState(env => {
+      terminalState.transmissions.selectTransmission match {
+        case Some(SelectTransmission(Some(_), Some(SelectResponse(Some(d), NormalProcessingNoFurtherQualification)))) =>
+          processGetProcessingOptionsBasedOnFciTemplate(context, card, terminalState, d).
+            map(x => {
+              val newTerminalState = terminalState.withGetProcessingOptions(x)
+              env.userInterface.reportGPOProcessed(x, newTerminalState)
+              newTerminalState
+            })
+        case _ => Task.fail(new RuntimeException("Select was no processed successfully"))
+      }
+    })
 
   def processReadRecords(context: ConnectionContext, card: CardTrait, terminalState: TerminalState): TransactionSt =
-    ReaderTTransactionState(_ => {
-    terminalState.transmissions.gpoTransmission match {
-      case Some(GPOTransmission(_, Some(GPOResponseFormat1(Some(format1), NormalProcessingNoFurtherQualification)))) =>
-        processReadRecords(context, card, terminalState, format1.afl)
-      case Some(GPOTransmission(_, Some(GPOResponseFormat2(Some(format2), NormalProcessingNoFurtherQualification)))) =>
-        format2.constructedValue.getTag(ApplicationFileLocator.tag) match {
-          case (Some(afl: ApplicationFileLocator)) => processReadRecords(context, card, terminalState, afl)
-          case _ => Task.fail(new RuntimeException("No AFL"))
-        }
-      case _ => Task.fail(new RuntimeException("GPO was no processed succesfully"))
-    }})
+    ReaderTTransactionState(env => {
+      terminalState.transmissions.gpoTransmission match {
+        case Some(GPOTransmission(_, Some(GPOResponseFormat1(Some(format1), NormalProcessingNoFurtherQualification)))) =>
+          processReadRecords(env, context, card, terminalState, format1.afl)
+        case Some(GPOTransmission(_, Some(GPOResponseFormat2(Some(format2), NormalProcessingNoFurtherQualification)))) =>
+          format2.constructedValue.getTag(ApplicationFileLocator.tag) match {
+            case (Some(afl: ApplicationFileLocator)) => processReadRecords(env, context, card, terminalState, afl)
+            case _ => Task.fail(new RuntimeException("No AFL"))
+          }
+        case _ => Task.fail(new RuntimeException("GPO was no processed succesfully"))
+      }
+    })
 
-  def processReadRecords(context: ConnectionContext, card: CardTrait, terminalState: TerminalState, afl: ApplicationFileLocator): Task[TerminalState] = {
+  def processReadRecords(env: TerminalEnv, context: ConnectionContext, card: CardTrait, terminalState: TerminalState, afl: ApplicationFileLocator): Task[TerminalState] = {
     val aidOption = terminalState.transientData.candidateList.headOption
     val parser = terminalState.getBrandParser(aidOption)
     parser match {
-      case Some(x) => readRecords(context, card, afl, x).map(terminalState.withReadRecordsTransmission)
+      case Some(x) => readRecords(context, card, afl, x).
+        map(r1 => {
+          val newTerminalState = terminalState.withReadRecordsTransmission(r1)
+          env.userInterface.reportReadRecordsProcessed(r1, newTerminalState)
+          newTerminalState
+        })
       case None => Task.fail(new RuntimeException("no parser"))
     }
   }
@@ -266,9 +275,9 @@ object TerminalProcessor extends LazyLogging {
 
   def reportTerminalInitialized(connectionContext: ConnectionContext, terminalState: TerminalState): ReaderT[Task, TerminalEnv, Unit] =
     Kleisli(env =>
-    Task(
-      env.userInterface.terminalInitialized(connectionContext, terminalState)
-    ))
+      Task(
+        env.userInterface.terminalInitialized(connectionContext, terminalState)
+      ))
 
   def reportCardConnected(connectionContext: ConnectionContext, terminalState: TerminalState): ReaderT[Task, TerminalEnv, Unit] =
     Kleisli(env =>
